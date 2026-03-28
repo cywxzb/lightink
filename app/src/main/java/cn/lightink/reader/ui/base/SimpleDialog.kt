@@ -5,15 +5,18 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import androidx.fragment.app.FragmentActivity
 import cn.lightink.reader.R
-import kotlinx.android.synthetic.main.dialog_simple.*
+import cn.lightink.reader.databinding.DialogSimpleBinding
 
 class SimpleDialog(val activity: FragmentActivity, val content: String, val callback: (Boolean) -> Unit) : Dialog(activity) {
 
+    private lateinit var binding: DialogSimpleBinding
+
     init {
-        setContentView(R.layout.dialog_simple)
-        mSimpleContent.text = content
-        mSimpleSubmit.setOnClickListener { callback.invoke(true).run { dismiss() } }
-        mSimpleCancel.setOnClickListener { callback.invoke(false).run { dismiss() } }
+        binding = DialogSimpleBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.mSimpleContent.text = content
+        binding.mSimpleSubmit.setOnClickListener { callback.invoke(true).run { dismiss() } }
+        binding.mSimpleCancel.setOnClickListener { callback.invoke(false).run { dismiss() } }
         setOnCancelListener { callback.invoke(false) }
     }
 

@@ -6,37 +6,41 @@ import android.text.TextPaint
 import android.text.style.ForegroundColorSpan
 import android.text.style.StrikethroughSpan
 import android.view.Gravity
+import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.DialogReaderPurifyBinding
+import cn.lightink.reader.databinding.ItemPurifyBinding
 import cn.lightink.reader.ktx.parentView
 import cn.lightink.reader.model.Purify
 import cn.lightink.reader.model.Theme
 import cn.lightink.reader.module.ListAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import kotlinx.android.synthetic.main.dialog_reader_purify.*
-import kotlinx.android.synthetic.main.item_purify.view.*
 
 class ReaderPurifyDialog(val context: FragmentActivity) : BottomSheetDialog(context, R.style.AppTheme_BottomSheet) {
 
     private val controller by lazy { ViewModelProvider(context)[ReaderController::class.java] }
+    private lateinit var binding: DialogReaderPurifyBinding
 
     private val defaultAdapter = ListAdapter<String>(R.layout.item_purify) { item, purify ->
-        item.view.mPurifyKey.text = SpannableStringBuilder(purify).apply {
+        val itemBinding = ItemPurifyBinding.bind(item.itemView)
+        itemBinding.mPurifyKey.text = SpannableStringBuilder(purify).apply {
             setSpan(StrikethroughSpan(), 0, length, SpannableStringBuilder.SPAN_INCLUSIVE_EXCLUSIVE)
         }
-        item.view.mPurifyKey.typeface = controller.paint.typeface
-        item.view.mPurifyKey.setTextColor(controller.theme.secondary)
-        item.view.mPurifyRemove.isVisible = false
-        item.view.setOnClickListener { item.view.mPurifyKey.maxLines = if (item.view.mPurifyKey.maxLines == 1) Int.MAX_VALUE else 1 }
+        itemBinding.mPurifyKey.typeface = controller.paint.typeface
+        itemBinding.mPurifyKey.setTextColor(controller.theme.secondary)
+        itemBinding.mPurifyRemove.isVisible = false
+        itemBinding.root.setOnClickListener { itemBinding.mPurifyKey.maxLines = if (itemBinding.mPurifyKey.maxLines == 1) Int.MAX_VALUE else 1 }
     }
 
     private val customAdapter = ListAdapter<Purify>(R.layout.item_purify) { item, purify ->
-        item.view.mPurifyKey.typeface = controller.paint.typeface
-        item.view.mPurifyKey.setTextColor(controller.theme.secondary)
-        item.view.mPurifyKey.text = if (purify.replace.isBlank()) {
+        val itemBinding = ItemPurifyBinding.bind(item.itemView)
+        itemBinding.mPurifyKey.typeface = controller.paint.typeface
+        itemBinding.mPurifyKey.setTextColor(controller.theme.secondary)
+        itemBinding.mPurifyKey.text = if (purify.replace.isBlank()) {
             SpannableStringBuilder(purify.key).apply {
                 setSpan(StrikethroughSpan(), 0, length, SpannableStringBuilder.SPAN_INCLUSIVE_EXCLUSIVE)
             }
@@ -46,37 +50,41 @@ class ReaderPurifyDialog(val context: FragmentActivity) : BottomSheetDialog(cont
                 setSpan(StrikethroughSpan(), purify.replace.length + 4, length, SpannableStringBuilder.SPAN_INCLUSIVE_EXCLUSIVE)
             }
         }
-        item.view.mPurifyRemove.imageTintList = ColorStateList.valueOf(controller.theme.content)
-        item.view.mPurifyRemove.setOnClickListener { purifyRemove(item.adapterPosition, purify) }
-        item.view.setOnClickListener { item.view.mPurifyKey.maxLines = if (item.view.mPurifyKey.maxLines == 1) Int.MAX_VALUE else 1 }
+        itemBinding.mPurifyRemove.imageTintList = ColorStateList.valueOf(controller.theme.content)
+        itemBinding.mPurifyRemove.setOnClickListener { purifyRemove(item.adapterPosition, purify) }
+        itemBinding.root.setOnClickListener { itemBinding.mPurifyKey.maxLines = if (itemBinding.mPurifyKey.maxLines == 1) Int.MAX_VALUE else 1 }
     }
 
     init {
         setContentView(R.layout.dialog_reader_purify)
-        mTopbar.setNavigationOnClickListener { dismiss() }
-        mTopbar.setOnMenuClickListener { createRegexRule() }
-        mPurifyScrollView.post { mPurifyScrollView.minimumHeight = context.resources.displayMetrics.heightPixels / 2 - mPurifyScrollView.top }
-        //书源内置
-        defaultAdapter.submitList(controller.getBookSourcePurifyList())
-        mPurifyDefaultLayout.isVisible = defaultAdapter.itemCount > 0
-        mPurifyDefaultRecycler.adapter = defaultAdapter
-        //用户自设
-        customAdapter.submitList(controller.purifyList)
-        mPurifyCustomHint.isVisible = controller.purifyList.isEmpty()
-        mPurifyCustomRecycler.adapter = customAdapter
-        setupViewTheme(controller.theme, controller.paint)
+        val contentView = findViewById<ViewGroup>(android.R.id.content)?.rootView
+        if (contentView != null) {
+            binding = DialogReaderPurifyBinding.bind(contentView)
+            binding.mTopbar.setNavigationOnClickListener { dismiss() }
+            binding.mTopbar.setOnMenuClickListener { createRegexRule() }
+            binding.mPurifyScrollView.post { binding.mPurifyScrollView.minimumHeight = context.resources.displayMetrics.heightPixels / 2 - binding.mPurifyScrollView.top }
+            //书源内置
+            defaultAdapter.submitList(controller.getBookSourcePurifyList())
+            binding.mPurifyDefaultLayout.isVisible = defaultAdapter.itemCount > 0
+            binding.mPurifyDefaultRecycler.adapter = defaultAdapter
+            //用户自设
+            customAdapter.submitList(controller.purifyList)
+            binding.mPurifyCustomHint.isVisible = controller.purifyList.isEmpty()
+            binding.mPurifyCustomRecycler.adapter = customAdapter
+            setupViewTheme(controller.theme, controller.paint)
+        }
     }
 
     private fun setupViewTheme(theme: Theme, paint: TextPaint) {
-        mTopbar.parentView.backgroundTintList = ColorStateList.valueOf(theme.foreground)
-        mTopIndicator.backgroundTintList = ColorStateList.valueOf(theme.secondary)
-        mTopbar.setTint(theme.content)
-        mPurifyDefaultTitle.typeface = paint.typeface
-        mPurifyDefaultTitle.setTextColor(theme.content)
-        mPurifyCustomTitle.typeface = paint.typeface
-        mPurifyCustomTitle.setTextColor(theme.content)
-        mPurifyCustomHint.typeface = paint.typeface
-        mPurifyCustomHint.setTextColor(theme.secondary)
+        binding.mTopbar.parentView.backgroundTintList = ColorStateList.valueOf(theme.foreground)
+        binding.mTopIndicator.backgroundTintList = ColorStateList.valueOf(theme.secondary)
+        binding.mTopbar.setTint(theme.content)
+        binding.mPurifyDefaultTitle.typeface = paint.typeface
+        binding.mPurifyDefaultTitle.setTextColor(theme.content)
+        binding.mPurifyCustomTitle.typeface = paint.typeface
+        binding.mPurifyCustomTitle.setTextColor(theme.content)
+        binding.mPurifyCustomHint.typeface = paint.typeface
+        binding.mPurifyCustomHint.setTextColor(theme.secondary)
     }
 
     private fun createRegexRule() {

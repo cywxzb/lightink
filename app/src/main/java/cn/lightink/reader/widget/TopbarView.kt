@@ -125,7 +125,7 @@ class TopbarView : RelativeLayout {
      */
     fun setTint(color: Int) {
         toolbar.navigationIcon = toolbar.navigationIcon?.tint(color)
-        toolbar.menu.children.forEach { it.icon = it.icon.tint(color) }
+        toolbar.menu.children.forEach { it.icon = it.icon?.tint(color) }
     }
 
     /**

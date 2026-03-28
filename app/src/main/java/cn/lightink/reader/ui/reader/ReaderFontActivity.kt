@@ -8,6 +8,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderSettingController
+import cn.lightink.reader.databinding.ActivityReaderFontBinding
+import cn.lightink.reader.databinding.ItemFontBinding
 import cn.lightink.reader.ktx.notifyItemAllChanged
 import cn.lightink.reader.model.Font
 import cn.lightink.reader.model.SystemFont
@@ -16,23 +18,23 @@ import cn.lightink.reader.module.ListAdapter
 import cn.lightink.reader.module.RVLinearLayoutManager
 import cn.lightink.reader.module.VH
 import cn.lightink.reader.ui.base.LifecycleActivity
-import kotlinx.android.synthetic.main.activity_reader_font.*
-import kotlinx.android.synthetic.main.item_font.view.*
 
 class ReaderFontActivity : LifecycleActivity() {
 
     private val controller by lazy { ViewModelProvider(this)[ReaderSettingController::class.java] }
     private val systemAdapter by lazy { buildSystemFontAdapter() }
     private val adapter by lazy { buildFontAdapter() }
+    private lateinit var binding: ActivityReaderFontBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_reader_font)
-        mSystemFontRecycler.layoutManager = RVLinearLayoutManager(this)
-        mSystemFontRecycler.adapter = systemAdapter.apply { submitList(listOf(SystemFont.System)) }
-        mReaderFontFolder.text = getString(R.string.reader_setting_font_fixed, getExternalFilesDir("fonts")?.absolutePath?.removePrefix(Environment.getExternalStorageDirectory().absolutePath))
-        mFontRecycler.layoutManager = RVLinearLayoutManager(this)
-        mFontRecycler.adapter = adapter
+        binding = ActivityReaderFontBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.mSystemFontRecycler.layoutManager = RVLinearLayoutManager(this)
+        binding.mSystemFontRecycler.adapter = systemAdapter.apply { submitList(listOf(SystemFont.System)) }
+        binding.mReaderFontFolder.text = getString(R.string.reader_setting_font_fixed, getExternalFilesDir("fonts")?.absolutePath?.removePrefix(Environment.getExternalStorageDirectory().absolutePath))
+        binding.mFontRecycler.layoutManager = RVLinearLayoutManager(this)
+        binding.mFontRecycler.adapter = adapter
         controller.queryFont(getExternalFilesDir("fonts")).observe(this, Observer { list -> adapter.submitList(list) })
     }
 
@@ -40,16 +42,17 @@ class ReaderFontActivity : LifecycleActivity() {
      * 构建内置字体数据适配器
      */
     private fun buildSystemFontAdapter() = ListAdapter<SystemFont>(R.layout.item_font) { item, font ->
-        item.view.mFontDisplay.text = font.display
-        item.view.mFontDisplay.typeface = if (font.demo.isBlank()) Typeface.DEFAULT else Typeface.createFromAsset(assets, font.demo)
-        item.view.mFontUsing.isVisible = font.display == FontModule.mCurrentFont.display
-        item.view.mFontInstall.isVisible = !item.view.mFontUsing.isVisible
+        val itemBinding = ItemFontBinding.bind(item.itemView)
+        itemBinding.mFontDisplay.text = font.display
+        itemBinding.mFontDisplay.typeface = if (font.demo.isBlank()) Typeface.DEFAULT else Typeface.createFromAsset(assets, font.demo)
+        itemBinding.mFontUsing.isVisible = font.display == FontModule.mCurrentFont.display
+        itemBinding.mFontInstall.isVisible = !itemBinding.mFontUsing.isVisible
         if (FontModule.isInstalled(font)) {
-            item.view.mFontInstall.setText(R.string.use)
-            item.view.mFontInstall.setOnClickListener { useFont(font) }
+            itemBinding.mFontInstall.setText(R.string.use)
+            itemBinding.mFontInstall.setOnClickListener { useFont(font) }
         } else {
-            item.view.mFontInstall.setText(R.string.download)
-            item.view.mFontInstall.setOnClickListener { download(item, font) }
+            itemBinding.mFontInstall.setText(R.string.download)
+            itemBinding.mFontInstall.setOnClickListener { download(item, font) }
         }
     }
 
@@ -58,8 +61,8 @@ class ReaderFontActivity : LifecycleActivity() {
      */
     private fun useFont(font: Any) {
         controller.useFont(font)
-        mFontRecycler.notifyItemAllChanged()
-        mSystemFontRecycler.notifyItemAllChanged()
+        binding.mFontRecycler.notifyItemAllChanged()
+        binding.mSystemFontRecycler.notifyItemAllChanged()
     }
 
     /**
@@ -67,8 +70,9 @@ class ReaderFontActivity : LifecycleActivity() {
      */
     private fun download(item: VH, font: SystemFont) {
         controller.downloadFont(font).observe(this, Observer { result ->
-            item.view.mFontInstallLoading.isVisible = result
-            item.view.mFontInstall.isVisible = !result
+            val itemBinding = ItemFontBinding.bind(item.itemView)
+            itemBinding.mFontInstallLoading.isVisible = result
+            itemBinding.mFontInstall.isVisible = !result
             if (!result) systemAdapter.notifyItemChanged(item.adapterPosition)
         })
     }
@@ -77,10 +81,11 @@ class ReaderFontActivity : LifecycleActivity() {
      * 构建外置字体数据适配器
      */
     private fun buildFontAdapter() = ListAdapter<Font>(R.layout.item_font) { item, font ->
-        item.view.mFontDisplay.text = font.display
-        item.view.mFontDisplay.typeface = font.typeface
-        item.view.mFontUsing.isVisible = font == FontModule.mCurrentFont
-        item.view.mFontInstall.isVisible = font != FontModule.mCurrentFont
-        item.view.mFontInstall.setOnClickListener { useFont(font) }
+        val itemBinding = ItemFontBinding.bind(item.itemView)
+        itemBinding.mFontDisplay.text = font.display
+        itemBinding.mFontDisplay.typeface = font.typeface
+        itemBinding.mFontUsing.isVisible = font == FontModule.mCurrentFont
+        itemBinding.mFontInstall.isVisible = font != FontModule.mCurrentFont
+        itemBinding.mFontInstall.setOnClickListener { useFont(font) }
     }
 }

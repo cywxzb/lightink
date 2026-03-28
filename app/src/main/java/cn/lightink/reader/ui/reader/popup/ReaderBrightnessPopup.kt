@@ -14,10 +14,10 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.PopupReaderBrightnessBinding
 import cn.lightink.reader.ktx.windowBrightness
 import cn.lightink.reader.model.Theme
 import cn.lightink.reader.module.Preferences
-import kotlinx.android.synthetic.main.popup_reader_brightness.view.*
 import kotlin.math.roundToInt
 
 @SuppressLint("InflateParams")
@@ -25,6 +25,7 @@ class ReaderBrightnessPopup(val context: FragmentActivity) : PopupWindow(LayoutI
 
     private val controller by lazy { ViewModelProvider(context)[ReaderController::class.java] }
     private val xAndProgress = PointF()
+    private val binding by lazy { PopupReaderBrightnessBinding.bind(contentView) }
 
     init {
         isOutsideTouchable = true
@@ -37,9 +38,9 @@ class ReaderBrightnessPopup(val context: FragmentActivity) : PopupWindow(LayoutI
     }
 
     private fun setupViewData() {
-        contentView.mBrightnessForeground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mBrightnessSeekBar, event) }
-        contentView.mBrightnessSeekBar.progress = Preferences.get(Preferences.Key.BRIGHTNESS, -1F).let { if (it in 0F..1F) it.toInt() * 10000 else 10001 }
-        onProgressChanged(contentView.mBrightnessSeekBar)
+        binding.mBrightnessForeground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mBrightnessSeekBar, event) }
+        binding.mBrightnessSeekBar.progress = Preferences.get(Preferences.Key.BRIGHTNESS, -1F).let { if (it in 0F..1F) it.toInt() * 10000 else 10001 }
+        onProgressChanged(binding.mBrightnessSeekBar)
     }
 
     private fun passTouchEvent(formView: View, toView: SeekBar, event: MotionEvent): Boolean {
@@ -54,16 +55,16 @@ class ReaderBrightnessPopup(val context: FragmentActivity) : PopupWindow(LayoutI
     }
 
     private fun setupViewTheme(theme: Theme) {
-        contentView.mBrightnessForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
-        contentView.mBrightnessBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
-        contentView.mBrightnessText.backgroundTintList = ColorStateList.valueOf(theme.control)
-        contentView.mBrightnessText.setTextColor(theme.foreground)
-        contentView.mBrightnessSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
+        binding.mBrightnessForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
+        binding.mBrightnessBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
+        binding.mBrightnessText.backgroundTintList = ColorStateList.valueOf(theme.control)
+        binding.mBrightnessText.setTextColor(theme.foreground)
+        binding.mBrightnessSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
     }
 
     private fun onProgressChanged(seekBar: SeekBar) {
         val progress = if (seekBar.progress == 10001) -1F else seekBar.progress * 0.0001F
-        contentView.mBrightnessText.text = if (progress == -1F) context.getString(R.string.reader_setting_brightness_auto) else context.getString(R.string.reader_setting_brightness_value, (progress * 100).toInt())
+        binding.mBrightnessText.text = if (progress == -1F) context.getString(R.string.reader_setting_brightness_auto) else context.getString(R.string.reader_setting_brightness_value, (progress * 100).toInt())
         if (progress != Preferences.get(Preferences.Key.BRIGHTNESS, -1F)) {
             Preferences.put(Preferences.Key.BRIGHTNESS, progress)
             context.windowBrightness = progress

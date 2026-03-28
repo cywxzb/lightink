@@ -12,6 +12,7 @@ import androidx.fragment.app.FragmentPagerAdapter
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.MainController
+import cn.lightink.reader.databinding.ActivityMainBinding
 import cn.lightink.reader.module.*
 import cn.lightink.reader.ui.base.LifecycleActivity
 import cn.lightink.reader.ui.bookshelf.BookshelfFragment
@@ -19,7 +20,6 @@ import cn.lightink.reader.ui.dashboard.DashboardFragment
 import cn.lightink.reader.ui.discover.DiscoverFragment
 import cn.lightink.reader.ui.reader.ReaderActivity
 import com.gyf.immersionbar.ktx.hasNotchScreen
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -30,13 +30,15 @@ class MainActivity : LifecycleActivity() {
 
     private val connectivityManager by lazy { applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
     private val controller by lazy { ViewModelProvider(this)[MainController::class.java] }
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         connectivityManager.registerNetworkCallback(NetworkRequest.Builder().build(), NetworkCallback)
         //尝试使用此行代码解决某些情况下点击图标重启应用的问题
         if (!isTaskRoot && intent.hasCategory(Intent.CATEGORY_LAUNCHER) && intent.action == Intent.ACTION_MAIN) return finish()
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         checkShortcuts()
         setupView()
         controller.autoClearInvalidBook(this)
@@ -49,9 +51,9 @@ class MainActivity : LifecycleActivity() {
             Preferences.put(Preferences.Key.HAS_NOTCH, hasNotchScreen)
             Preferences.put(Preferences.Key.READER_HEIGHT, window.decorView.height)
         }
-        mViewPager.offscreenPageLimit = 2
-        mViewPager.adapter = SlidePagerAdapter(supportFragmentManager)
-        mViewPager.setCurrentItem(1, false)
+        binding.mViewPager.offscreenPageLimit = 2
+        binding.mViewPager.adapter = SlidePagerAdapter(supportFragmentManager)
+        binding.mViewPager.setCurrentItem(1, false)
     }
 
     /**
@@ -67,7 +69,7 @@ class MainActivity : LifecycleActivity() {
     }
 
     override fun onBackPressed() {
-        if (mViewPager.currentItem != 1) {
+        if (binding.mViewPager.currentItem != 1) {
             return openBookshelfPage()
         }
         super.onBackPressed()
@@ -100,15 +102,15 @@ class MainActivity : LifecycleActivity() {
     }
 
     fun openDiscoverPage() {
-        mViewPager.currentItem = 2
+        binding.mViewPager.currentItem = 2
     }
 
     fun openDashboardPage() {
-        mViewPager.currentItem = 0
+        binding.mViewPager.currentItem = 0
     }
 
     private fun openBookshelfPage() {
-        mViewPager.currentItem = 1
+        binding.mViewPager.currentItem = 1
     }
 
     /***********************************************************************************************

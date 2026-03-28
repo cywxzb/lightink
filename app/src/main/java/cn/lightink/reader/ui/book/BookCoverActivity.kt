@@ -9,6 +9,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.BookController
+import cn.lightink.reader.databinding.ActivityBookCoverBinding
+import cn.lightink.reader.databinding.ItemBookCoverBinding
 import cn.lightink.reader.ktx.toast
 import cn.lightink.reader.model.Book
 import cn.lightink.reader.module.INTENT_BOOK
@@ -16,8 +18,6 @@ import cn.lightink.reader.module.ListAdapter
 import cn.lightink.reader.module.RVGridLayoutManager
 import cn.lightink.reader.module.TOAST_TYPE_SUCCESS
 import cn.lightink.reader.ui.base.LifecycleActivity
-import kotlinx.android.synthetic.main.activity_book_cover.*
-import kotlinx.android.synthetic.main.item_book_cover.view.*
 import kotlin.math.max
 
 class BookCoverActivity : LifecycleActivity() {
@@ -25,6 +25,7 @@ class BookCoverActivity : LifecycleActivity() {
     private val controller by lazy { ViewModelProvider(this)[BookController::class.java] }
     private val book by lazy { intent.getParcelableExtra<Book>(INTENT_BOOK) }
     private val adapter by lazy { buildAdapter() }
+    private lateinit var binding: ActivityBookCoverBinding
     //封面尺寸
     private val size by lazy { resources.getDimensionPixelSize(R.dimen.dimenBookshelfCoverSize) }
     //封面边距
@@ -34,13 +35,14 @@ class BookCoverActivity : LifecycleActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_book_cover)
-        mTopbar.setOnMenuClickListener { openSelector() }
-        mBookCoverRecycler.layoutManager = RVGridLayoutManager(this, span)
-        mBookCoverRecycler.setPadding(edge)
-        mBookCoverRecycler.adapter = adapter
+        binding = ActivityBookCoverBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.mTopbar.setOnMenuClickListener { openSelector() }
+        binding.mBookCoverRecycler.layoutManager = RVGridLayoutManager(this, span)
+        binding.mBookCoverRecycler.setPadding(edge)
+        binding.mBookCoverRecycler.adapter = adapter
         controller.queryCover(book?.name.orEmpty()).observe(this, Observer {
-            mTopbar.setProgressVisible(false)
+            binding.mTopbar.setProgressVisible(false)
             adapter.submitList(adapter.currentList.plus(it))
         })
     }
@@ -83,10 +85,11 @@ class BookCoverActivity : LifecycleActivity() {
      * 构建数据适配器
      */
     private fun buildAdapter() = ListAdapter<String>(R.layout.item_book_cover) { item, uri ->
+        val binding = ItemBookCoverBinding.bind(item.view)
         item.view.setPadding(edge)
-        item.view.mBookCover.layoutParams.width = size
-        item.view.mBookCover.layoutParams.height = (size * 1.4F).toInt()
-        item.view.mBookCover.hint(book?.name.orEmpty()).load(uri)
+        binding.mBookCover.layoutParams.width = size
+        binding.mBookCover.layoutParams.height = (size * 1.4F).toInt()
+        binding.mBookCover.hint(book?.name.orEmpty()).load(uri)
         item.view.setOnClickListener { downloadCover(uri) }
     }
 

@@ -9,26 +9,28 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.DialogSyncProgressBinding
 import cn.lightink.reader.model.BookSyncProgress
 import cn.lightink.reader.module.INTENT_PROGRESS
-import kotlinx.android.synthetic.main.dialog_sync_progress.view.*
 import java.text.SimpleDateFormat
 import java.util.*
 
 class SyncProgressDialog : DialogFragment() {
 
     private val controller by lazy { ViewModelProvider(activity!!)[ReaderController::class.java] }
+    private lateinit var binding: DialogSyncProgressBinding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.dialog_sync_progress, container, false)
+        binding = DialogSyncProgressBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val progress = arguments?.getParcelable<BookSyncProgress>(INTENT_PROGRESS)
-        view.mSyncProgressDate.text = progress?.run { SimpleDateFormat("yyyy / M / d", Locale.CHINESE).format(startAt) }
-        view.mSyncProgressChapter.text = progress?.title
-        view.mSyncProgressButton.setOnClickListener {
+        binding.mSyncProgressDate.text = progress?.run { SimpleDateFormat("yyyy / M / d", Locale.CHINESE).format(startAt) }
+        binding.mSyncProgressChapter.text = progress?.title
+        binding.mSyncProgressButton.setOnClickListener {
             progress?.run { controller.syncProgress(this) }
             dismissAllowingStateLoss()
         }

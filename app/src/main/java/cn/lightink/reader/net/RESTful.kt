@@ -1,6 +1,5 @@
 package cn.lightink.reader.net
 
-import cn.lightink.reader.BuildConfig
 import cn.lightink.reader.ktx.string
 import cn.lightink.reader.model.Result
 import com.google.gson.Gson
@@ -22,7 +21,7 @@ object RESTful {
     private const val URL = "https://xxx.xxx.xxx"
 
     private val client by lazy {
-        OkHttpClient.Builder().addInterceptor(HttpLoggingInterceptor().apply { level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE }).connectTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).writeTimeout(10, TimeUnit.SECONDS).build()
+        OkHttpClient.Builder().addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }).connectTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).writeTimeout(10, TimeUnit.SECONDS).build()
     }
 
 

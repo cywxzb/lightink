@@ -5,14 +5,17 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import cn.lightink.reader.R
-import kotlinx.android.synthetic.main.dialog_warning_message.*
+import cn.lightink.reader.databinding.DialogWarningMessageBinding
 
 class WarningMessageDialog(context: Context, message: String) : Dialog(context) {
 
+    private lateinit var binding: DialogWarningMessageBinding
+
     init {
-        setContentView(R.layout.dialog_warning_message)
-        mWarningMessageContent.text = message
-        mWarningMessageCancel.setOnClickListener { dismiss() }
+        binding = DialogWarningMessageBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.mWarningMessageContent.text = message
+        binding.mWarningMessageCancel.setOnClickListener { dismiss() }
     }
 
     override fun onStart() {

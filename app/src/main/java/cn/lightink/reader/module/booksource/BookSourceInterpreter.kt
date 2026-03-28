@@ -50,7 +50,7 @@ object BookSourceInterpreter {
                 val request = buildRequest(url, auth) ?: return null
                 val response = Http.client.newCall(request).execute()
                 val bookSourceResponse = if (response.isSuccessful && response.body != null) {
-                    onResponse(response.url, response.body!!.bytes(), response.header("Content-Type") ?: "text/plain")
+                    onResponse(response.request.url.toString(), response.body!!.bytes(), response.header("Content-Type") ?: "text/plain")
                 } else null
                 
                 //保存到缓存

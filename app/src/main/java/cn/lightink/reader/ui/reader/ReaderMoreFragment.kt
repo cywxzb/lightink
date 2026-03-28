@@ -12,6 +12,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.FragmentReaderMoreBinding
+import cn.lightink.reader.databinding.ItemActionBinding
 import cn.lightink.reader.ktx.alpha
 import cn.lightink.reader.ktx.px
 import cn.lightink.reader.ktx.startActivityForResult
@@ -24,8 +26,6 @@ import cn.lightink.reader.module.RVGridLayoutManager
 import cn.lightink.reader.ui.base.LifecycleFragment
 import cn.lightink.reader.ui.reader.popup.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import kotlinx.android.synthetic.main.fragment_reader_more.view.*
-import kotlinx.android.synthetic.main.item_action.view.*
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -34,31 +34,34 @@ class ReaderMoreFragment : LifecycleFragment(), View.OnTouchListener {
     private val controller by lazy { ViewModelProvider(requireActivity())[ReaderController::class.java] }
     private val adapter by lazy { buildAdapter() }
     private val point = PointF()
+    private lateinit var binding: FragmentReaderMoreBinding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_reader_more, container, false)
+        binding = FragmentReaderMoreBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.mReaderMoreRecycler.setOnTouchListener(this)
-        view.mReaderMoreRecycler.updateLayoutParams<LinearLayout.LayoutParams> { setMargins(0, max(controller.defaultMoreTopMargin, 0) + view.px(8), 0, controller.defaultMenuPaddingBottom) }
-        view.mReaderMoreRecycler.layoutManager = RVGridLayoutManager(context, 4)
-        view.mReaderMoreRecycler.adapter = adapter.apply { submitList(Action.values().toList()) }
+        binding.mReaderMoreRecycler.setOnTouchListener(this)
+        binding.mReaderMoreRecycler.updateLayoutParams<LinearLayout.LayoutParams> { setMargins(0, max(controller.defaultMoreTopMargin, 0) + requireContext().px(8), 0, controller.defaultMenuPaddingBottom) }
+        binding.mReaderMoreRecycler.layoutManager = RVGridLayoutManager(context, 4)
+        binding.mReaderMoreRecycler.adapter = adapter.apply { submitList(Action.values().toList()) }
         BookCacheModule.attachCacheStatusLive().observe(viewLifecycleOwner, Observer { adapter.notifyItemChanged(6) })
     }
 
     private fun buildAdapter() = ListAdapter<Action>(R.layout.item_action) { item, action ->
-        item.view.mActionTitle.setTextColor(controller.theme.secondary)
-        item.view.mActionTitle.text = getString(action.title)
-        item.view.mActionTitle.typeface = controller.paint.typeface
-        item.view.mActionIcon.updateLayoutParams<LinearLayout.LayoutParams> {
+        val itemBinding = ItemActionBinding.bind(item.itemView)
+        itemBinding.mActionTitle.setTextColor(controller.theme.secondary)
+        itemBinding.mActionTitle.text = getString(action.title)
+        itemBinding.mActionTitle.typeface = controller.paint.typeface
+        itemBinding.mActionIcon.updateLayoutParams<LinearLayout.LayoutParams> {
             height = controller.defaultMoreActionSize
             width = controller.defaultMoreActionSize
         }
-        item.view.mActionIcon.isEnabled = true
-        item.view.mActionIcon.setImageResource(action.icon)
-        item.view.mActionIcon.setOnClickListener { onActionClicked(item.adapterPosition, action) }
-        checkActionState(item.view.mActionIcon, action)
+        itemBinding.mActionIcon.isEnabled = true
+        itemBinding.mActionIcon.setImageResource(action.icon)
+        itemBinding.mActionIcon.setOnClickListener { onActionClicked(item.adapterPosition, action) }
+        checkActionState(itemBinding.mActionIcon, action)
     }
 
     private fun onActionClicked(position: Int, action: Action) {

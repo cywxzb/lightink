@@ -27,7 +27,7 @@ class BaseAdapter<T>(val list: MutableList<T>, @LayoutRes private val layoutResI
 
 }
 
-class PageListAdapter<T>(@LayoutRes private val layoutResId: Int, equalContent: (T, T) -> Boolean = { old, new -> old == new }, equalItem: (T, T) -> Boolean = { old, new -> old == new }, private val onBindImpl: (item: VH, T?) -> Unit) : PagedListAdapter<T, VH>(ItemDiffUtil<T>(equalItem, equalContent)) {
+class PageListAdapter<T : Any>(@LayoutRes private val layoutResId: Int, equalContent: (T, T) -> Boolean = { old, new -> old == new }, equalItem: (T, T) -> Boolean = { old, new -> old == new }, private val onBindImpl: (item: VH, T?) -> Unit) : PagedListAdapter<T, VH>(ItemDiffUtil<T>(equalItem, equalContent)) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         return VH(LayoutInflater.from(parent.context).inflate(layoutResId, parent, false))
@@ -43,7 +43,7 @@ class PageListAdapter<T>(@LayoutRes private val layoutResId: Int, equalContent: 
 
 }
 
-class ListAdapter<T>(@LayoutRes private val layoutResId: Int, equalContent: (T, T) -> Boolean = { old, new -> old == new }, equalItem: (T, T) -> Boolean = { old, new -> old == new }, private val onBindImpl: (item: VH, T) -> Unit) : ListAdapter<T, VH>(ItemDiffUtil<T>(equalItem, equalContent)) {
+class ListAdapter<T : Any>(@LayoutRes private val layoutResId: Int, equalContent: (T, T) -> Boolean = { old, new -> old == new }, equalItem: (T, T) -> Boolean = { old, new -> old == new }, private val onBindImpl: (item: VH, T) -> Unit) : ListAdapter<T, VH>(ItemDiffUtil<T>(equalItem, equalContent)) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         return VH(LayoutInflater.from(parent.context).inflate(layoutResId, parent, false))
@@ -61,7 +61,7 @@ class ListAdapter<T>(@LayoutRes private val layoutResId: Int, equalContent: (T, 
 
 class VH(val view: View) : RecyclerView.ViewHolder(view)
 
-class ItemDiffUtil<T>(private val equalItem: (T, T) -> Boolean, private val equalContent: (T, T) -> Boolean) : DiffUtil.ItemCallback<T>() {
+class ItemDiffUtil<T : Any>(private val equalItem: (T, T) -> Boolean, private val equalContent: (T, T) -> Boolean) : DiffUtil.ItemCallback<T>() {
 
     override fun areItemsTheSame(oldItem: T, newItem: T): Boolean {
         return equalItem.invoke(oldItem, newItem)

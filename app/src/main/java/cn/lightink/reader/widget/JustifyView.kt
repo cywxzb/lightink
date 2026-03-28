@@ -569,12 +569,12 @@ class JustifyView @JvmOverloads constructor(context: Context, attrs: AttributeSe
         /**
          * 绘制游标
          */
-        override fun onDraw(canvas: Canvas?) {
-            canvas?.drawCircle(radius + padding, radius + padding, radius, paint)
+        override fun onDraw(canvas: Canvas) {
+            canvas.drawCircle(radius + padding, radius + padding, radius, paint)
             if (isLeft) {
-                canvas?.drawRect(radius + padding, padding, radius * 2 + padding, radius + padding, paint)
+                canvas.drawRect(radius + padding, padding, radius * 2 + padding, radius + padding, paint)
             } else {
-                canvas?.drawRect(padding, padding, radius + padding, radius + padding, paint)
+                canvas.drawRect(padding, padding, radius + padding, radius + padding, paint)
             }
         }
     }

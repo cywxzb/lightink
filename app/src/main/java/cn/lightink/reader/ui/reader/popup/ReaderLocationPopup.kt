@@ -14,8 +14,8 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.PopupReaderLocationBinding
 import cn.lightink.reader.model.Theme
-import kotlinx.android.synthetic.main.popup_reader_location.view.*
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -24,6 +24,7 @@ class ReaderLocationPopup(val context: FragmentActivity) : PopupWindow(LayoutInf
 
     private val controller by lazy { ViewModelProvider(context)[ReaderController::class.java] }
     private val xAndProgress = PointF()
+    private val binding by lazy { PopupReaderLocationBinding.bind(contentView) }
 
     init {
         isOutsideTouchable = true
@@ -37,12 +38,12 @@ class ReaderLocationPopup(val context: FragmentActivity) : PopupWindow(LayoutInf
 
     private fun setupViewData() {
         //行间距
-        contentView.mLocationForeground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mLocationSeekBar, event) }
+        binding.mLocationForeground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mLocationSeekBar, event) }
         controller.findRangeByPage().run {
-            contentView.mLocationSeekBar.progress = start
-            contentView.mLocationSeekBar.max = last
+            binding.mLocationSeekBar.progress = start
+            binding.mLocationSeekBar.max = last
         }
-        onProgressChanged(contentView.mLocationSeekBar)
+        onProgressChanged(binding.mLocationSeekBar)
     }
 
     private fun passTouchEvent(formView: View, toView: SeekBar, event: MotionEvent): Boolean {
@@ -59,16 +60,16 @@ class ReaderLocationPopup(val context: FragmentActivity) : PopupWindow(LayoutInf
 
     private fun setupViewTheme(theme: Theme) {
         //行间距
-        contentView.mLocationForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
-        contentView.mLocationBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
-        contentView.mLocationText.backgroundTintList = ColorStateList.valueOf(theme.control)
-        contentView.mLocationText.setTextColor(theme.foreground)
-        contentView.mLocationSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
+        binding.mLocationForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
+        binding.mLocationBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
+        binding.mLocationText.backgroundTintList = ColorStateList.valueOf(theme.control)
+        binding.mLocationText.setTextColor(theme.foreground)
+        binding.mLocationSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
     }
 
 
     private fun onProgressChanged(seekBar: SeekBar) {
-        contentView.mLocationText.text = context.getString(R.string.reader_setting_location_value, seekBar.progress, seekBar.max)
+        binding.mLocationText.text = context.getString(R.string.reader_setting_location_value, seekBar.progress, seekBar.max)
         controller.pageSeekCallback?.invoke(controller.findChapterStartIndex() + seekBar.progress - 1)
     }
 

@@ -20,6 +20,8 @@ import androidx.recyclerview.widget.DiffUtil
 import cn.lightink.reader.App
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.FragmentReaderCatalogBinding
+import cn.lightink.reader.databinding.ItemCatalogChapterBinding
 import cn.lightink.reader.ktx.px
 import cn.lightink.reader.ktx.setDrawableEnd
 import cn.lightink.reader.ktx.tint
@@ -32,8 +34,6 @@ import cn.lightink.reader.ui.base.LifecycleFragment
 import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_COLLAPSED
 import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
-import kotlinx.android.synthetic.main.fragment_reader_catalog.view.*
-import kotlinx.android.synthetic.main.item_catalog_chapter.view.*
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.max
@@ -47,13 +47,15 @@ class ReaderCatalogFragment : LifecycleFragment(), View.OnTouchListener, Recycle
     private var reverse = false
     private val point = PointF()
     private var hasBooklet = false
+    private lateinit var binding: FragmentReaderCatalogBinding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_reader_catalog, container, false)
+        binding = FragmentReaderCatalogBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        setupView(view)
+        setupView(binding)
         hasBooklet = controller.catalog.any { it.level > 0 }
         chapterList.addAll(controller.catalog)
         adapter.submitList(chapterList)
@@ -61,44 +63,44 @@ class ReaderCatalogFragment : LifecycleFragment(), View.OnTouchListener, Recycle
         controller.addBottomSheetOffsetCallbacks { offset, offsetF -> onBottomSheetOffsetChanged(offset, offsetF) }
         controller.bottomSheetStateLiveData.observe(viewLifecycleOwner, Observer { onBottomSheetStateChanged(it) })
         controller.currentPageLiveData.observe(viewLifecycleOwner, Observer { onCurrentPageChanged(it) })
-        controller.displayStateLiveData.observe(viewLifecycleOwner, Observer { setupViewTheme(view, controller.theme, controller.paint) })
+        controller.displayStateLiveData.observe(viewLifecycleOwner, Observer { setupViewTheme(binding, controller.theme, controller.paint) })
         BookCacheModule.attachCacheLive().observe(viewLifecycleOwner, Observer { onChapterCacheChanged(it) })
     }
 
-    private fun setupView(view: View) {
-        view.mReaderMenuTitle.text = controller.book.name
-        view.mReaderCatalog.layoutManager = layoutManager
-        view.mReaderCatalog.adapter = adapter
-        view.mReaderCatalog.setOnTouchListener(this)
-        view.mReaderFastScroller.setHandleStateListener(this)
-        view.mReaderMenuArrow.setOnClickListener { activity?.onBackPressed() }
-        view.mReaderMenuListen.setOnClickListener { startActivity(Intent(requireActivity(), ListeningActivity::class.java).putExtra(INTENT_BOOK, controller.book.objectId)).run { activity?.finish() } }
-        view.mReaderMenuNight.setImageResource(if (UIModule.isNightMode(requireActivity())) R.drawable.ic_reader_day else R.drawable.ic_reader_night)
-        view.mReaderMenuNight.setOnClickListener {
+    private fun setupView(binding: FragmentReaderCatalogBinding) {
+        binding.mReaderMenuTitle.text = controller.book.name
+        binding.mReaderCatalog.layoutManager = layoutManager
+        binding.mReaderCatalog.adapter = adapter
+        binding.mReaderCatalog.setOnTouchListener(this)
+        binding.mReaderFastScroller.setHandleStateListener(this)
+        binding.mReaderMenuArrow.setOnClickListener { activity?.onBackPressed() }
+        binding.mReaderMenuListen.setOnClickListener { startActivity(Intent(requireActivity(), ListeningActivity::class.java).putExtra(INTENT_BOOK, controller.book.objectId)).run { activity?.finish() } }
+        binding.mReaderMenuNight.setImageResource(if (UIModule.isNightMode(requireActivity())) R.drawable.ic_reader_day else R.drawable.ic_reader_night)
+        binding.mReaderMenuNight.setOnClickListener {
             Preferences.put(Preferences.Key.LIGHT, Preferences.get(Preferences.Key.LIGHT, true).not())
             (activity?.application as? App)?.setupTheme()
         }
-        view.mReaderMenuSort.setOnClickListener { (it as ImageButton).setImageResource(onCatalogChangeClicked()) }
+        binding.mReaderMenuSort.setOnClickListener { (it as ImageButton).setImageResource(onCatalogChangeClicked()) }
     }
 
     /**
      * 设置主题
      */
-    private fun setupViewTheme(view: View, theme: Theme, paint: TextPaint) {
-        view.mReaderMenuTitle.setTextColor(controller.theme.content)
-        view.mReaderMenuTitle.typeface = paint.typeface
-        view.mReaderMenuArrow.imageTintList = ColorStateList.valueOf(controller.theme.content)
-        view.mReaderMenuListen.imageTintList = ColorStateList.valueOf(controller.theme.content)
-        view.mReaderMenuNight.imageTintList = ColorStateList.valueOf(controller.theme.content)
-        view.mReaderMenuSort.imageTintList = ColorStateList.valueOf(controller.theme.content)
-        view.mReaderFastScroller.handleDrawable = view.mReaderFastScroller.handleDrawable?.tint(theme.control)
-        view.mReaderFastScroller.popupDrawable = resources.getDrawable(R.drawable.bg_fast_scroll, context?.theme).tint(theme.control)
-        view.mReaderFastScroller.popupTextView.includeFontPadding = false
-        view.mReaderFastScroller.popupTextView.typeface = paint.typeface
-        view.mReaderFastScroller.popupTextView.setTextColor(theme.foreground)
-        view.mReaderFastScroller.popupTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14F)
-        view.mReaderFastScroller.popupTextView.setPadding(view.mReaderFastScroller.px(14), 0, view.mReaderFastScroller.px(14), 0)
-        view.mReaderFastScroller.popupTextView.updateLayoutParams { height = controller.defaultFastScrollerPopupHeight }
+    private fun setupViewTheme(binding: FragmentReaderCatalogBinding, theme: Theme, paint: TextPaint) {
+        binding.mReaderMenuTitle.setTextColor(controller.theme.content)
+        binding.mReaderMenuTitle.typeface = paint.typeface
+        binding.mReaderMenuArrow.imageTintList = ColorStateList.valueOf(controller.theme.content)
+        binding.mReaderMenuListen.imageTintList = ColorStateList.valueOf(controller.theme.content)
+        binding.mReaderMenuNight.imageTintList = ColorStateList.valueOf(controller.theme.content)
+        binding.mReaderMenuSort.imageTintList = ColorStateList.valueOf(controller.theme.content)
+        binding.mReaderFastScroller.handleDrawable = binding.mReaderFastScroller.handleDrawable?.tint(theme.control)
+        binding.mReaderFastScroller.popupDrawable = resources.getDrawable(R.drawable.bg_fast_scroll, context?.theme).tint(theme.control)
+        binding.mReaderFastScroller.popupTextView.includeFontPadding = false
+        binding.mReaderFastScroller.popupTextView.typeface = paint.typeface
+        binding.mReaderFastScroller.popupTextView.setTextColor(theme.foreground)
+        binding.mReaderFastScroller.popupTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14F)
+        binding.mReaderFastScroller.popupTextView.setPadding(binding.mReaderFastScroller.px(14), 0, binding.mReaderFastScroller.px(14), 0)
+        binding.mReaderFastScroller.popupTextView.updateLayoutParams { height = controller.defaultFastScrollerPopupHeight }
         adapter.notifyDataSetChanged()
     }
 
@@ -106,17 +108,17 @@ class ReaderCatalogFragment : LifecycleFragment(), View.OnTouchListener, Recycle
     }
 
     override fun onEngaged() {
-        view?.mReaderFastScroller?.handleDrawable?.tint(controller.theme.control)
+        binding.mReaderFastScroller.handleDrawable?.tint(controller.theme.control)
         if (controller.bottomSheetStateLiveData.value == STATE_EXPANDED) {
-            view?.mReaderFastScroller?.popupDrawable = resources.getDrawable(R.drawable.bg_fast_scroll, context?.theme).tint(controller.theme.control)
+            binding.mReaderFastScroller.popupDrawable = resources.getDrawable(R.drawable.bg_fast_scroll, context?.theme).tint(controller.theme.control)
         } else {
-            view?.mReaderFastScroller?.popupDrawable = null
+            binding.mReaderFastScroller.popupDrawable = null
         }
     }
 
     override fun onReleased() {
         if (controller.bottomSheetStateLiveData.value != STATE_EXPANDED) {
-            view?.mReaderFastScroller?.handleDrawable?.tint(Color.TRANSPARENT)
+            binding.mReaderFastScroller.handleDrawable?.tint(Color.TRANSPARENT)
         }
     }
 
@@ -142,20 +144,20 @@ class ReaderCatalogFragment : LifecycleFragment(), View.OnTouchListener, Recycle
      * 菜单偏移量改变
      */
     private fun onBottomSheetOffsetChanged(offset: Float = 0F, offsetF: Float = 0F) {
-        view?.mReaderCatalog?.updateLayoutParams { height = max(controller.defaultCatalogHeight, controller.defaultCatalogHeight + offset.toInt()) }
+        binding.mReaderCatalog.updateLayoutParams { height = max(controller.defaultCatalogHeight, controller.defaultCatalogHeight + offset.toInt()) }
         if (offsetF > 0.5F && controller.currentPageLiveData.value != null) {
             //优化目录抬起定位
             val position = chapterList.indexOfFirst { it.index == controller.currentPageLiveData.value!!.chapter.index }
             val index = position - (layoutManager.findLastVisibleItemPosition() - layoutManager.findFirstVisibleItemPosition()) / 2
             layoutManager.scrollToPositionWithOffset(max(index, 0), 0)
         }
-        view?.mReaderMenuListen?.alpha = 1 - offsetF
-        view?.mReaderMenuListen?.isEnabled = offsetF < 0.5F
-        view?.mReaderMenuNight?.alpha = 1 - offsetF
-        view?.mReaderMenuNight?.isEnabled = offsetF < 0.5F
-        view?.mReaderMenuSort?.alpha = offsetF
-        view?.mReaderMenuSort?.isEnabled = offsetF > 0.5F
-        view?.mReaderMenuSort?.isVisible = offsetF > 0F
+        binding.mReaderMenuListen.alpha = 1 - offsetF
+        binding.mReaderMenuListen.isEnabled = offsetF < 0.5F
+        binding.mReaderMenuNight.alpha = 1 - offsetF
+        binding.mReaderMenuNight.isEnabled = offsetF < 0.5F
+        binding.mReaderMenuSort.alpha = offsetF
+        binding.mReaderMenuSort.isEnabled = offsetF > 0.5F
+        binding.mReaderMenuSort.isVisible = offsetF > 0F
     }
 
     /**
@@ -187,17 +189,18 @@ class ReaderCatalogFragment : LifecycleFragment(), View.OnTouchListener, Recycle
      * 构建目录数据适配器
      */
     private fun buildCatalogAdapter() = CatalogAdapter { item, chapter ->
-        item.view.mBookChapter.text = chapter.title
-        item.view.mBookChapter.typeface = controller.paint.typeface
-        item.view.mBookChapter.setTextColor(when {
+        val itemBinding = ItemCatalogChapterBinding.bind(item.itemView)
+        itemBinding.mBookChapter.text = chapter.title
+        itemBinding.mBookChapter.typeface = controller.paint.typeface
+        itemBinding.mBookChapter.setTextColor(when {
             chapter.index == controller.book.chapter -> controller.theme.control
             (hasBooklet && chapter.level == 0) || controller.isHaveRead(chapter) -> controller.theme.secondary
             else -> controller.theme.content
         })
-        item.view.mBookChapter.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (hasBooklet && chapter.level == 0) 12F else 14.5F)
-        item.view.mBookChapter.compoundDrawableTintList = ColorStateList.valueOf(controller.theme.secondary)
-        item.view.mBookChapter.setDrawableEnd(if (controller.getBookSourceName().isBlank() || chapter.href.isBlank() || File(controller.book.path, "$MP_FOLDER_TEXTS/${chapter.encodeHref}.md").exists()) 0 else R.drawable.ic_chapter_on_cloud)
-        item.view.mBookChapter.setOnClickListener {
+        itemBinding.mBookChapter.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (hasBooklet && chapter.level == 0) 12F else 14.5F)
+        itemBinding.mBookChapter.compoundDrawableTintList = ColorStateList.valueOf(controller.theme.secondary)
+        itemBinding.mBookChapter.setDrawableEnd(if (controller.getBookSourceName().isBlank() || chapter.href.isBlank() || File(controller.book.path, "$MP_FOLDER_TEXTS/${chapter.encodeHref}.md").exists()) 0 else R.drawable.ic_chapter_on_cloud)
+        itemBinding.mBookChapter.setOnClickListener {
             controller.menuHiddenStateLiveData.postValue(View.INVISIBLE)
             controller.jump(chapter.index)
         }

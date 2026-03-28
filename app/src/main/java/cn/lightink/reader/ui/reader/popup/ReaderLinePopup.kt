@@ -14,9 +14,9 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.PopupReaderLineBinding
 import cn.lightink.reader.model.Theme
 import cn.lightink.reader.module.Preferences
-import kotlinx.android.synthetic.main.popup_reader_line.view.*
 import kotlin.math.roundToInt
 
 @SuppressLint("InflateParams")
@@ -24,6 +24,7 @@ class ReaderLinePopup(val context: FragmentActivity) : PopupWindow(LayoutInflate
 
     private val controller by lazy { ViewModelProvider(context)[ReaderController::class.java] }
     private val xAndProgress = PointF()
+    private val binding by lazy { PopupReaderLineBinding.bind(contentView) }
 
     init {
         isOutsideTouchable = true
@@ -37,13 +38,13 @@ class ReaderLinePopup(val context: FragmentActivity) : PopupWindow(LayoutInflate
 
     private fun setupViewData() {
         //行间距
-        contentView.mLineForeground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mLineSeekBar, event) }
-        contentView.mLineSeekBar.progress = ((Preferences.get(Preferences.Key.LINE_SPACING, 1.3F) - 1) * 10).toInt()
-        onProgressChanged(contentView.mLineSeekBar)
+        binding.mLineForeground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mLineSeekBar, event) }
+        binding.mLineSeekBar.progress = ((Preferences.get(Preferences.Key.LINE_SPACING, 1.3F) - 1) * 10).toInt()
+        onProgressChanged(binding.mLineSeekBar)
         //段间距
-        contentView.mParagraphForeground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mParagraphSeekBar, event) }
-        contentView.mParagraphSeekBar.progress = Preferences.get(Preferences.Key.PARAGRAPH_DISTANCE, 0)
-        onProgressChanged(contentView.mParagraphSeekBar)
+        binding.mParagraphForeground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mParagraphSeekBar, event) }
+        binding.mParagraphSeekBar.progress = Preferences.get(Preferences.Key.PARAGRAPH_DISTANCE, 0)
+        onProgressChanged(binding.mParagraphSeekBar)
     }
 
     private fun passTouchEvent(formView: View, toView: SeekBar, event: MotionEvent): Boolean {
@@ -61,33 +62,33 @@ class ReaderLinePopup(val context: FragmentActivity) : PopupWindow(LayoutInflate
 
     private fun setupViewTheme(theme: Theme) {
         //行间距
-        contentView.mLineForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
-        contentView.mLineBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
-        contentView.mLineText.backgroundTintList = ColorStateList.valueOf(theme.control)
-        contentView.mLineText.setTextColor(theme.foreground)
-        contentView.mLineSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
+        binding.mLineForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
+        binding.mLineBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
+        binding.mLineText.backgroundTintList = ColorStateList.valueOf(theme.control)
+        binding.mLineText.setTextColor(theme.foreground)
+        binding.mLineSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
         //段间距
-        contentView.mParagraphForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
-        contentView.mParagraphBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
-        contentView.mParagraphText.backgroundTintList = ColorStateList.valueOf(theme.control)
-        contentView.mParagraphText.setTextColor(theme.foreground)
-        contentView.mParagraphSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
+        binding.mParagraphForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
+        binding.mParagraphBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
+        binding.mParagraphText.backgroundTintList = ColorStateList.valueOf(theme.control)
+        binding.mParagraphText.setTextColor(theme.foreground)
+        binding.mParagraphSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
     }
 
 
     private fun onProgressChanged(seekBar: SeekBar) {
         when (seekBar) {
             //字号
-            contentView.mLineSeekBar -> contentView.mLineText.text = context.getString(R.string.reader_setting_line_spacing, seekBar.progress * 0.1F + 1F)
+            binding.mLineSeekBar -> binding.mLineText.text = context.getString(R.string.reader_setting_line_spacing, seekBar.progress * 0.1F + 1F)
             //字间距
-            contentView.mParagraphSeekBar -> contentView.mParagraphText.text = context.getString(R.string.reader_setting_paragraph_spacing, seekBar.progress * 0.1F)
+            binding.mParagraphSeekBar -> binding.mParagraphText.text = context.getString(R.string.reader_setting_paragraph_spacing, seekBar.progress * 0.1F)
         }
     }
 
     private fun onStopTrackingTouch(seekBar: SeekBar) {
         when (seekBar) {
             //行间距
-            contentView.mLineSeekBar -> {
+            binding.mLineSeekBar -> {
                 val newValue = seekBar.progress * 0.1F + 1F
                 if (newValue != Preferences.get(Preferences.Key.LINE_SPACING, 1.3F)) {
                     Preferences.put(Preferences.Key.LINE_SPACING, newValue)
@@ -95,7 +96,7 @@ class ReaderLinePopup(val context: FragmentActivity) : PopupWindow(LayoutInflate
                 }
             }
             //段间距
-            contentView.mParagraphSeekBar -> if (seekBar.progress != Preferences.get(Preferences.Key.PARAGRAPH_DISTANCE, 0)) {
+            binding.mParagraphSeekBar -> if (seekBar.progress != Preferences.get(Preferences.Key.PARAGRAPH_DISTANCE, 0)) {
                 Preferences.put(Preferences.Key.PARAGRAPH_DISTANCE, seekBar.progress).run { controller.setupDisplay(context).jump() }
             }
         }

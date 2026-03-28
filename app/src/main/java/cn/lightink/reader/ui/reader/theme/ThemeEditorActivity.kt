@@ -18,6 +18,8 @@ import androidx.palette.graphics.Palette
 import cn.lightink.reader.MIPMAP_PATH
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ThemeController
+import cn.lightink.reader.databinding.ActivityThemeEditorBinding
+import cn.lightink.reader.databinding.ItemThemeActionBinding
 import cn.lightink.reader.ktx.change
 import cn.lightink.reader.ktx.parentView
 import cn.lightink.reader.ktx.px
@@ -29,8 +31,6 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HIDDEN
 import com.gyf.immersionbar.BarHide
 import com.gyf.immersionbar.ktx.immersionBar
 import com.gyf.immersionbar.ktx.navigationBarHeight
-import kotlinx.android.synthetic.main.activity_theme_editor.*
-import kotlinx.android.synthetic.main.item_theme_action.view.*
 import java.io.File
 
 class ThemeEditorActivity : LifecycleActivity() {
@@ -38,27 +38,28 @@ class ThemeEditorActivity : LifecycleActivity() {
     private val inputMethodManager by lazy { applicationContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager  }
     private val controller by lazy { ViewModelProvider(this)[ThemeController::class.java] }
     private val actions = listOf(R.string.theme_background, R.string.theme_foreground, R.string.theme_content, R.string.theme_secondary, R.string.theme_control, R.string.theme_horizontal, R.string.theme_top, R.string.theme_bottom)
+    private val binding by lazy { ActivityThemeEditorBinding.inflate(layoutInflater) }
     private val adapter = ListAdapter<Int>(R.layout.item_theme_action) { item, title -> onBindView(item, title) }
-    private val behavior by lazy { BottomSheetBehavior.from(mThemeMenuLayout) }
+    private val behavior by lazy { BottomSheetBehavior.from(binding.mThemeMenuLayout) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_theme_editor)
+        setContentView(binding.root)
         controller.setupTheme(intent.getLongExtra(INTENT_THEME, -1), UIModule.isNightMode(this))
-        mThemeMenuRecycler.layoutManager = RVGridLayoutManager(this, 4)
-        mThemeMenuRecycler.adapter = adapter.apply { submitList(actions) }
-        mThemeEditorLayout.setPadding(px(controller.theme.horizontal), px(controller.theme.top), px(controller.theme.horizontal), px(controller.theme.bottom))
-        mThemeEditorContent.text = getString(R.string.theme_editor_content)
-        mThemeEditorContent.textSize = px(17).toFloat()
-        mThemeEditorContent.lineSpacing = 1.3F
-        mThemeMenuLayout.parentView.setOnClickListener { showOrHideMenu() }
-        mThemeEditorPicker.setOnClickListener { pickPicture() }
-        mThemeMenuLayout.post { mThemeMenuLayout.setPadding(0, 0, 0, getRealNavigationBarHeight()) }
-        mThemeEditorSubmit.setOnClickListener { submit() }
+        binding.mThemeMenuRecycler.layoutManager = RVGridLayoutManager(this, 4)
+        binding.mThemeMenuRecycler.adapter = adapter.apply { submitList(actions) }
+        binding.mThemeEditorLayout.setPadding(px(controller.theme.horizontal), px(controller.theme.top), px(controller.theme.horizontal), px(controller.theme.bottom))
+        binding.mThemeEditorContent.text = getString(R.string.theme_editor_content)
+        binding.mThemeEditorContent.textSize = px(17).toFloat()
+        binding.mThemeEditorContent.lineSpacing = 1.3F
+        binding.mThemeMenuLayout.parentView.setOnClickListener { showOrHideMenu() }
+        binding.mThemeEditorPicker.setOnClickListener { pickPicture() }
+        binding.mThemeMenuLayout.post { binding.mThemeMenuLayout.setPadding(0, 0, 0, getRealNavigationBarHeight()) }
+        binding.mThemeEditorSubmit.setOnClickListener { submit() }
         //主题名
-        mThemeEditorNameInput.change { text -> controller.theme.name = text.trim() }
-        mThemeEditorNameInput.setText(controller.theme.name)
-        mThemeEditorNameInput.setOnEditorActionListener { v, actionId, _ ->
+        binding.mThemeEditorNameInput.change { text -> controller.theme.name = text.trim() }
+        binding.mThemeEditorNameInput.setText(controller.theme.name)
+        binding.mThemeEditorNameInput.setOnEditorActionListener { v, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) v.clearFocus()
             return@setOnEditorActionListener false
         }
@@ -75,24 +76,24 @@ class ThemeEditorActivity : LifecycleActivity() {
 
     private fun updateViewTheme() {
         if (controller.theme.mipmap.isBlank()) {
-            mThemeEditorLayout.setBackgroundColor(controller.theme.background)
+            binding.mThemeEditorLayout.setBackgroundColor(controller.theme.background)
         } else {
-            mThemeEditorLayout.background = UIModule.getMipmapByTheme(controller.theme)
+            binding.mThemeEditorLayout.background = UIModule.getMipmapByTheme(controller.theme)
         }
-        mThemeEditorPicker.setTextColor(controller.theme.content)
-        mThemeEditorPicker.compoundDrawableTintList = ColorStateList.valueOf(controller.theme.content)
-        mThemeMenuLayout.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        mThemeEditorSubmit.setTextColor(ColorStateList(arrayOf(arrayOf(android.R.attr.state_enabled).toIntArray(), IntArray(0)), arrayOf(controller.theme.control, controller.theme.secondary).toIntArray()))
-        mThemeEditorTitle.setTextColor(controller.theme.content)
-        mThemeEditorChapter.setTextColor(controller.theme.secondary)
-        mThemeEditorChapterTime.setTextColor(controller.theme.secondary)
-        mThemeEditorChapterSchedule.setTextColor(controller.theme.secondary)
-        mThemeEditorContent.textColor = controller.theme.content
-        mThemeEditorContent.invalidate()
-        mThemeEditorNameInput.setTextColor(controller.theme.content)
-        mThemeEditorNameInput.setHintTextColor(controller.theme.secondary)
-        mThemeMenuTopLine.setBackgroundColor(controller.theme.content)
-        mThemeMenuBottomLine.setBackgroundColor(controller.theme.content)
+        binding.mThemeEditorPicker.setTextColor(controller.theme.content)
+        binding.mThemeEditorPicker.compoundDrawableTintList = ColorStateList.valueOf(controller.theme.content)
+        binding.mThemeMenuLayout.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mThemeEditorSubmit.setTextColor(ColorStateList(arrayOf(arrayOf(android.R.attr.state_enabled).toIntArray(), IntArray(0)), arrayOf(controller.theme.control, controller.theme.secondary).toIntArray()))
+        binding.mThemeEditorTitle.setTextColor(controller.theme.content)
+        binding.mThemeEditorChapter.setTextColor(controller.theme.secondary)
+        binding.mThemeEditorChapterTime.setTextColor(controller.theme.secondary)
+        binding.mThemeEditorChapterSchedule.setTextColor(controller.theme.secondary)
+        binding.mThemeEditorContent.textColor = controller.theme.content
+        binding.mThemeEditorContent.invalidate()
+        binding.mThemeEditorNameInput.setTextColor(controller.theme.content)
+        binding.mThemeEditorNameInput.setHintTextColor(controller.theme.secondary)
+        binding.mThemeMenuTopLine.setBackgroundColor(controller.theme.content)
+        binding.mThemeMenuBottomLine.setBackgroundColor(controller.theme.content)
         immersionBar { navigationBarColorInt(controller.theme.foreground) }
         adapter.notifyItemRangeChanged(0, actions.size)
     }
@@ -116,7 +117,7 @@ class ThemeEditorActivity : LifecycleActivity() {
      * 保存主题
      */
     private fun submit() {
-        if (mThemeEditorNameInput.text.isNullOrBlank()) return toast("未填写主题名")
+        if (binding.mThemeEditorNameInput.text.isNullOrBlank()) return toast("未填写主题名")
         val result = controller.saveTheme()
         if (result.isNotBlank()) {
             toast(result)
@@ -126,20 +127,21 @@ class ThemeEditorActivity : LifecycleActivity() {
     }
 
     private fun onBindView(item: VH, titleResId: Int) {
-        item.view.mThemeActionValue.parentView.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
-        item.view.mThemeActionValue.backgroundTintList = ColorStateList.valueOf(controller.theme.getColorByName(titleResId))
-        item.view.mThemeActionValue.text = controller.theme.getValueByName(titleResId).let { if (it > 0) it.toString() else EMPTY }
-        item.view.mThemeActionValue.setTextColor(controller.theme.content)
-        item.view.mThemeActionTitle.setText(titleResId)
-        item.view.mThemeActionTitle.setTextColor(controller.theme.content)
-        item.view.mThemeActionValue.parentView.setOnClickListener { if (controller.theme.getValueByName(titleResId) == 0) showColorPicker(titleResId) else showDistanceSeek(titleResId) }
+        val itemBinding = ItemThemeActionBinding.bind(item.itemView)
+        itemBinding.mThemeActionValue.parentView.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
+        itemBinding.mThemeActionValue.backgroundTintList = ColorStateList.valueOf(controller.theme.getColorByName(titleResId))
+        itemBinding.mThemeActionValue.text = controller.theme.getValueByName(titleResId).let { if (it > 0) it.toString() else EMPTY }
+        itemBinding.mThemeActionValue.setTextColor(controller.theme.content)
+        itemBinding.mThemeActionTitle.setText(titleResId)
+        itemBinding.mThemeActionTitle.setTextColor(controller.theme.content)
+        itemBinding.mThemeActionValue.parentView.setOnClickListener { if (controller.theme.getValueByName(titleResId) == 0) showColorPicker(titleResId) else showDistanceSeek(titleResId) }
     }
 
     private fun showDistanceSeek(titleResId: Int) {
         showOrHideMenu()
         ThemeDistancePopup(this, controller.theme.getValueByName(titleResId)) { value ->
             controller.theme.setValueByName(titleResId, value)
-            mThemeEditorLayout.setPadding(px(controller.theme.horizontal), px(controller.theme.top), px(controller.theme.horizontal), px(controller.theme.bottom))
+            binding.mThemeEditorLayout.setPadding(px(controller.theme.horizontal), px(controller.theme.top), px(controller.theme.horizontal), px(controller.theme.bottom))
             adapter.notifyItemRangeChanged(0, actions.size)
         }.apply {
             setOnDismissListener { showOrHideMenu() }

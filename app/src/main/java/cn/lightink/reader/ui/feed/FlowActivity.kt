@@ -6,6 +6,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.FeedController
+import cn.lightink.reader.databinding.ActivityFlowBinding
 import cn.lightink.reader.model.Feed
 import cn.lightink.reader.model.THEME_LIGHT
 import cn.lightink.reader.model.THEME_NIGHT
@@ -14,16 +15,17 @@ import cn.lightink.reader.module.INTENT_FEED_GROUP
 import cn.lightink.reader.module.UIModule
 import cn.lightink.reader.ui.base.LifecycleActivity
 import com.gyf.immersionbar.ktx.immersionBar
-import kotlinx.android.synthetic.main.activity_flow.*
 import kotlin.math.max
 
 class FlowActivity : LifecycleActivity() {
 
     private val controller by lazy { ViewModelProvider(this)[FeedController::class.java] }
+    private lateinit var binding: ActivityFlowBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_flow)
+        binding = ActivityFlowBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         controller.startedFlowLink = intent.getStringExtra(INTENT_FEED_FLOW).orEmpty()
         controller.theme = if (UIModule.isNightMode(this)) THEME_NIGHT else THEME_LIGHT
 //        controller.theme = when {
@@ -53,9 +55,9 @@ class FlowActivity : LifecycleActivity() {
     }
 
     private fun submitList(flowLinks: List<String>) {
-        if (mViewPager.adapter == null) {
-            mViewPager.adapter = FlowAdapter(this, flowLinks)
-            mViewPager.setCurrentItem(max(0, flowLinks.indexOf(controller.startedFlowLink)), false)
+        if (binding.mViewPager.adapter == null) {
+            binding.mViewPager.adapter = FlowAdapter(this, flowLinks)
+            binding.mViewPager.setCurrentItem(max(0, flowLinks.indexOf(controller.startedFlowLink)), false)
         }
     }
 

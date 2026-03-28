@@ -14,7 +14,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ThemeController
-import kotlinx.android.synthetic.main.popup_theme_distance.view.*
+import cn.lightink.reader.databinding.PopupThemeDistanceBinding
 import kotlin.math.roundToInt
 
 @SuppressLint("InflateParams")
@@ -22,6 +22,7 @@ class ThemeDistancePopup(val context: FragmentActivity, val distance: Int, val c
 
     private val controller by lazy { ViewModelProvider(context)[ThemeController::class.java] }
     private val xAndProgress = PointF()
+    private val binding by lazy { PopupThemeDistanceBinding.bind(contentView) }
 
     init {
         isOutsideTouchable = true
@@ -34,9 +35,9 @@ class ThemeDistancePopup(val context: FragmentActivity, val distance: Int, val c
     }
 
     private fun setupViewData() {
-        contentView.mDistanceForeground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mDistanceSeekBar, event) }
-        contentView.mDistanceSeekBar.progress = distance
-        onProgressChanged(contentView.mDistanceSeekBar)
+        binding.mDistanceForeground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mDistanceSeekBar, event) }
+        binding.mDistanceSeekBar.progress = distance
+        onProgressChanged(binding.mDistanceSeekBar)
     }
 
     private fun passTouchEvent(formView: View, toView: SeekBar, event: MotionEvent): Boolean {
@@ -51,13 +52,13 @@ class ThemeDistancePopup(val context: FragmentActivity, val distance: Int, val c
     }
 
     private fun setupViewTheme() {
-        contentView.mDistanceBackground.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
-        contentView.mDistanceForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        contentView.mDistanceText.setTextColor(controller.theme.foreground)
+        binding.mDistanceBackground.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
+        binding.mDistanceForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mDistanceText.setTextColor(controller.theme.foreground)
     }
 
     private fun onProgressChanged(seekBar: SeekBar) {
-        contentView.mDistanceText.text = seekBar.progress.toString()
+        binding.mDistanceText.text = seekBar.progress.toString()
         callback.invoke(seekBar.progress)
     }
 

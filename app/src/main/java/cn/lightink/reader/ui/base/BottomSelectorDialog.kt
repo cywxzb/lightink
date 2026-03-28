@@ -3,20 +3,22 @@ package cn.lightink.reader.ui.base
 import android.content.Context
 import android.widget.TextView
 import cn.lightink.reader.R
+import cn.lightink.reader.databinding.DialogBottomSelectorBinding
 import cn.lightink.reader.ktx.setDrawableStart
 import cn.lightink.reader.module.ListAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import kotlinx.android.synthetic.main.dialog_bottom_selector.*
 
 class BottomSelectorDialog<T>(context: Context, val title: String, val items: List<T>, val display: (T) -> String) : BottomSheetDialog(context, R.style.AppTheme_BottomSheet) {
 
     private var callback: ((T) -> Unit)? = null
+    private lateinit var binding: DialogBottomSelectorBinding
 
     init {
-        setContentView(R.layout.dialog_bottom_selector)
-        mBottomSelectorTitle.text = title
-        mBottomSelectorRecycler.adapter = buildAdapter().apply { submitList(items.toList()) }
-        mBottomSelectorCancel.setOnClickListener { dismiss() }
+        binding = DialogBottomSelectorBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.mBottomSelectorTitle.text = title
+        binding.mBottomSelectorRecycler.adapter = buildAdapter().apply { submitList(items.toList()) }
+        binding.mBottomSelectorCancel.setOnClickListener { dismiss() }
     }
 
     fun callback(callback: (T) -> Unit): BottomSelectorDialog<T> {

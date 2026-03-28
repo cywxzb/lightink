@@ -11,6 +11,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.FragmentReaderSummaryBinding
+import cn.lightink.reader.databinding.ItemBookmarkBinding
 import cn.lightink.reader.model.Bookmark
 import cn.lightink.reader.model.Theme
 import cn.lightink.reader.module.ListAdapter
@@ -18,24 +20,24 @@ import cn.lightink.reader.module.RVLinearLayoutManager
 import cn.lightink.reader.module.Room
 import cn.lightink.reader.ui.base.LifecycleFragment
 import cn.lightink.reader.ui.base.PopupMenu
-import kotlinx.android.synthetic.main.fragment_reader_summary.view.*
-import kotlinx.android.synthetic.main.item_bookmark.view.*
 import kotlin.math.min
 
 class ReaderSummaryFragment : LifecycleFragment() {
 
     private val controller by lazy { ViewModelProvider(activity!!)[ReaderController::class.java] }
     private val adapter by lazy { buildBookmarkAdapter() }
+    private lateinit var binding: FragmentReaderSummaryBinding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_reader_summary, container, false)
+        binding = FragmentReaderSummaryBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.mReaderBookmarkRecycler.updateLayoutParams<LinearLayout.LayoutParams> { setMargins(0, 0, 0, controller.defaultMenuPaddingBottom) }
-        view.mReaderBookmarkRecycler.layoutManager = RVLinearLayoutManager(activity)
-        view.mReaderBookmarkRecycler.adapter = adapter
-        controller.displayStateLiveData.observe(viewLifecycleOwner, Observer { setupViewTheme(view, controller.theme, controller.paint) })
+        binding.mReaderBookmarkRecycler.updateLayoutParams<LinearLayout.LayoutParams> { setMargins(0, 0, 0, controller.defaultMenuPaddingBottom) }
+        binding.mReaderBookmarkRecycler.layoutManager = RVLinearLayoutManager(activity)
+        binding.mReaderBookmarkRecycler.adapter = adapter
+        controller.displayStateLiveData.observe(viewLifecycleOwner, Observer { setupViewTheme(binding, controller.theme, controller.paint) })
         controller.bookmarks.observe(viewLifecycleOwner, Observer { adapter.submitList(it) })
         onUpdateSummary()
     }
@@ -43,36 +45,37 @@ class ReaderSummaryFragment : LifecycleFragment() {
     /**
      * 设置主题
      */
-    private fun setupViewTheme(view: View, theme: Theme, paint: TextPaint) {
-        view.mReaderProgressTitle.setTextColor(theme.secondary)
-        view.mReaderProgressTitle.typeface = paint.typeface
-        view.mReaderProgress.setTextColor(theme.content)
-        view.mReaderProgress.typeface = paint.typeface
-        view.mReaderStatisticsTitle.setTextColor(theme.secondary)
-        view.mReaderStatisticsTitle.typeface = paint.typeface
-        view.mReaderStatistics.setTextColor(theme.content)
-        view.mReaderStatistics.typeface = paint.typeface
-        view.mReaderBookmarkTitle.setTextColor(theme.secondary)
-        view.mReaderBookmarkTitle.typeface = paint.typeface
+    private fun setupViewTheme(binding: FragmentReaderSummaryBinding, theme: Theme, paint: TextPaint) {
+        binding.mReaderProgressTitle.setTextColor(theme.secondary)
+        binding.mReaderProgressTitle.typeface = paint.typeface
+        binding.mReaderProgress.setTextColor(theme.content)
+        binding.mReaderProgress.typeface = paint.typeface
+        binding.mReaderStatisticsTitle.setTextColor(theme.secondary)
+        binding.mReaderStatisticsTitle.typeface = paint.typeface
+        binding.mReaderStatistics.setTextColor(theme.content)
+        binding.mReaderStatistics.typeface = paint.typeface
+        binding.mReaderBookmarkTitle.setTextColor(theme.secondary)
+        binding.mReaderBookmarkTitle.typeface = paint.typeface
     }
 
     /**
      * 构建书签数据适配器
      */
     private fun buildBookmarkAdapter() = ListAdapter<Bookmark>(R.layout.item_bookmark) { item, bookmark ->
-        item.view.mBookmarkTitle.setTextColor(controller.theme.content)
-        item.view.mBookmarkTitle.typeface = controller.paint.typeface
-        item.view.mBookmarkTitle.text = bookmark.title
-        item.view.mBookmarkSummary.setTextColor(controller.theme.content)
-        item.view.mBookmarkSummary.typeface = controller.paint.typeface
-        item.view.mBookmarkSummary.text = bookmark.summary
-        item.view.setOnClickListener {
+        val itemBinding = ItemBookmarkBinding.bind(item.itemView)
+        itemBinding.mBookmarkTitle.setTextColor(controller.theme.content)
+        itemBinding.mBookmarkTitle.typeface = controller.paint.typeface
+        itemBinding.mBookmarkTitle.text = bookmark.title
+        itemBinding.mBookmarkSummary.setTextColor(controller.theme.content)
+        itemBinding.mBookmarkSummary.typeface = controller.paint.typeface
+        itemBinding.mBookmarkSummary.text = bookmark.summary
+        itemBinding.root.setOnClickListener {
             controller.book.chapter = bookmark.chapter
             controller.book.chapterProgress = bookmark.progress
             (activity as? ReaderActivity)?.recreate()
         }
-        item.view.setOnLongClickListener {
-            PopupMenu(requireActivity()).items(R.string.delete).callback { Room.bookmark().delete(bookmark) }.show(item.view.mBookmarkTitle)
+        itemBinding.root.setOnLongClickListener {
+            PopupMenu(requireActivity()).items(R.string.delete).callback { Room.bookmark().delete(bookmark) }.show(itemBinding.mBookmarkTitle)
             return@setOnLongClickListener true
         }
     }
@@ -83,8 +86,8 @@ class ReaderSummaryFragment : LifecycleFragment() {
     }
 
     private fun onUpdateSummary() {
-        view?.mReaderProgress?.text = getString(R.string.reader_summary_progress, min(Room.bookRecord().count(controller.book.objectId), controller.catalog.size), controller.catalog.size)
-        view?.mReaderStatistics?.text = getString(R.string.reader_summary_statistics, controller.book.time / 60, controller.book.speed.toInt())
+        binding.mReaderProgress.text = getString(R.string.reader_summary_progress, min(Room.bookRecord().count(controller.book.objectId), controller.catalog.size), controller.catalog.size)
+        binding.mReaderStatistics.text = getString(R.string.reader_summary_statistics, controller.book.time / 60, controller.book.speed.toInt())
     }
 
 }

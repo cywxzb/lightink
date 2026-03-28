@@ -87,7 +87,7 @@ class BookRankController : ViewModel() {
                             val speed = System.currentTimeMillis() - begin
                             list.forEach { metadata -> handleSearchBook(metadata, source, speed) }
                             if (searchJob?.isActive == true && searchBook != null) {
-                                SearchObserver.postValue(listOf(searchBook))
+                                SearchObserver.postValue(listOfNotNull(searchBook))
                             }
                         }
                     }

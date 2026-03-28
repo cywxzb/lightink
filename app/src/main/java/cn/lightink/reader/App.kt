@@ -30,7 +30,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         //配置Log
-        ALog.init(this).setLogSwitch(BuildConfig.DEBUG).setGlobalTag("轻墨")
+        ALog.init(this).setLogSwitch(true).setGlobalTag("轻墨")
         //配置Toast
         Toasty.Config.getInstance().setTextSize(15).apply()
         //配置JsonPath使用Gson解析

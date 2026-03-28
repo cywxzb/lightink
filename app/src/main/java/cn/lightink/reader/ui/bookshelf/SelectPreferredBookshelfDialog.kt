@@ -12,27 +12,29 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.BookController
+import cn.lightink.reader.databinding.DialogSelectPreferredBookshelfBinding
 import cn.lightink.reader.model.Bookshelf
 import cn.lightink.reader.module.ListAdapter
 import cn.lightink.reader.module.RVLinearLayoutManager
 import cn.lightink.reader.module.Room
-import kotlinx.android.synthetic.main.dialog_select_preferred_bookshelf.*
 
 class SelectPreferredBookshelfDialog : DialogFragment() {
 
     private val controller by lazy { ViewModelProvider(activity!!)[BookController::class.java] }
     private val adapter by lazy { buildAdapter() }
     private var callback: ((Bookshelf) -> Unit)? = null
+    private lateinit var binding: DialogSelectPreferredBookshelfBinding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.dialog_select_preferred_bookshelf, container, false)
+        binding = DialogSelectPreferredBookshelfBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val current = arguments?.getLong(INTENT_CURRENT, -1L) ?: -1L
-        mBookshelfPreferred.isVisible = current < 0 && Room.bookshelf().hasPreferred() < 1
-        mBookshelfRecycler.layoutManager = RVLinearLayoutManager(activity)
-        mBookshelfRecycler.adapter = adapter
+        binding.mBookshelfPreferred.isVisible = current < 0 && Room.bookshelf().hasPreferred() < 1
+        binding.mBookshelfRecycler.layoutManager = RVLinearLayoutManager(activity)
+        binding.mBookshelfRecycler.adapter = adapter
         controller.queryBookshelves().observe(viewLifecycleOwner, Observer { list -> adapter.submitList(list.filter { it.id != current }) })
     }
 
@@ -52,7 +54,7 @@ class SelectPreferredBookshelfDialog : DialogFragment() {
     }
 
     private fun checked(bookshelf: Bookshelf) {
-        if (mBookshelfPreferred.isChecked) {
+        if (binding.mBookshelfPreferred.isChecked) {
             bookshelf.preferred = true
             Room.bookshelf().update(bookshelf)
         }

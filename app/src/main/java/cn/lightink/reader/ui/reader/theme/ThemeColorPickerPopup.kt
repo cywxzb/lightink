@@ -19,7 +19,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ThemeController
-import kotlinx.android.synthetic.main.popup_theme_color_picker.view.*
+import cn.lightink.reader.databinding.PopupThemeColorPickerBinding
 import okhttp3.internal.toHexString
 import kotlin.math.roundToInt
 
@@ -28,6 +28,7 @@ class ThemeColorPickerPopup(val context: FragmentActivity, val color: Int, val c
 
     private val controller by lazy { ViewModelProvider(context)[ThemeController::class.java] }
     private val inputMethodManager by lazy { context.applicationContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager }
+    private val binding by lazy { PopupThemeColorPickerBinding.bind(contentView) }
     private val xAndProgress = PointF()
 
     init {
@@ -38,43 +39,44 @@ class ThemeColorPickerPopup(val context: FragmentActivity, val color: Int, val c
         setBackgroundDrawable(ColorDrawable())
         setupViewData(color)
         setupViewTheme()
-        contentView.mColorValueInput.setOnFocusChangeListener { _, hasFocus -> contentView.mColorValueText.isVisible =  !hasFocus }
-        contentView.mColorValueInput.doOnTextChanged { hex, _, _, _ ->
+        binding.mColorValueInput.setOnFocusChangeListener { _, hasFocus -> binding.mColorValueText.isVisible =  !hasFocus }
+        binding.mColorValueInput.doOnTextChanged { hex, _, _, _ ->
             when {
                 hex != null && hex.startsWith("#") && hex.length == 7 -> parseColor(hex.toString())
                 hex != null && !hex.startsWith("#") && hex.length == 6 -> parseColor("#$hex")
+                else -> {}
             }
         }
-        contentView.mColorValueReset.setOnClickListener { setupViewData(color) }
+        binding.mColorValueReset.setOnClickListener { setupViewData(color) }
     }
 
     private fun setupViewData(color: Int) {
         //RED
-        contentView.mColorRForeground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mColorRSeekBar, event) }
-        contentView.mColorRSeekBar.progress = Color.red(color)
-        onProgressChanged(contentView.mColorRSeekBar)
+        binding.mColorRForeground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mColorRSeekBar, event) }
+        binding.mColorRSeekBar.progress = Color.red(color)
+        onProgressChanged(binding.mColorRSeekBar)
         //GREEN
-        contentView.mColorGForeground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mColorGSeekBar, event) }
-        contentView.mColorGSeekBar.progress = Color.green(color)
-        onProgressChanged(contentView.mColorGSeekBar)
+        binding.mColorGForeground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mColorGSeekBar, event) }
+        binding.mColorGSeekBar.progress = Color.green(color)
+        onProgressChanged(binding.mColorGSeekBar)
         //BLUE
-        contentView.mColorBForeground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mColorBSeekBar, event) }
-        contentView.mColorBSeekBar.progress = Color.blue(color)
-        onProgressChanged(contentView.mColorBSeekBar)
+        binding.mColorBForeground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mColorBSeekBar, event) }
+        binding.mColorBSeekBar.progress = Color.blue(color)
+        onProgressChanged(binding.mColorBSeekBar)
         //Reset
-        contentView.mColorValueInput.text?.clear()
-        contentView.mColorValueInput.clearFocus()
-        inputMethodManager.hideSoftInputFromWindow(contentView.mColorValueInput.windowToken, 0)
+        binding.mColorValueInput.text?.clear()
+        binding.mColorValueInput.clearFocus()
+        inputMethodManager.hideSoftInputFromWindow(binding.mColorValueInput.windowToken, 0)
     }
 
     private fun setupViewTheme() {
-        contentView.mColorValueForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        contentView.mColorRForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        contentView.mColorRBackground.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
-        contentView.mColorGForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        contentView.mColorGBackground.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
-        contentView.mColorBForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        contentView.mColorBBackground.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
+        binding.mColorValueForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mColorRForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mColorRBackground.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
+        binding.mColorGForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mColorGBackground.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
+        binding.mColorBForeground.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mColorBBackground.backgroundTintList = ColorStateList.valueOf(controller.theme.background)
     }
 
     /**
@@ -83,7 +85,7 @@ class ThemeColorPickerPopup(val context: FragmentActivity, val color: Int, val c
     private fun parseColor(colorString: String) = try {
         setupViewData(Color.parseColor(colorString))
     } catch (e: Exception) {
-        contentView.mColorValueInput.text?.clear()
+        binding.mColorValueInput.text?.clear()
     }
 
     private fun passTouchEvent(formView: View, toView: SeekBar, event: MotionEvent): Boolean {
@@ -100,22 +102,22 @@ class ThemeColorPickerPopup(val context: FragmentActivity, val color: Int, val c
     private fun onProgressChanged(seekBar: SeekBar) {
         when (seekBar) {
             //RED
-            contentView.mColorRSeekBar -> {
-                contentView.mColorRText.text = context.getString(R.string.theme_color_red, seekBar.progress)
+            binding.mColorRSeekBar -> {
+                binding.mColorRText.text = context.getString(R.string.theme_color_red, seekBar.progress)
             }
             //GREEN
-            contentView.mColorGSeekBar -> {
-                contentView.mColorGText.text = context.getString(R.string.theme_color_green, seekBar.progress)
+            binding.mColorGSeekBar -> {
+                binding.mColorGText.text = context.getString(R.string.theme_color_green, seekBar.progress)
             }
             //BLUE
-            contentView.mColorBSeekBar -> {
-                contentView.mColorBText.text = context.getString(R.string.theme_color_blue, seekBar.progress)
+            binding.mColorBSeekBar -> {
+                binding.mColorBText.text = context.getString(R.string.theme_color_blue, seekBar.progress)
             }
         }
         //VALUE
-        val color = Color.rgb(contentView.mColorRSeekBar.progress, contentView.mColorGSeekBar.progress, contentView.mColorBSeekBar.progress)
-        contentView.mColorValueText.text = color.toHexString().let { if (it.length > 6) it.substring(it.length - 6, it.length) else it }
-        contentView.mColorValueBackground.backgroundTintList = ColorStateList.valueOf(color)
+        val color = Color.rgb(binding.mColorRSeekBar.progress, binding.mColorGSeekBar.progress, binding.mColorBSeekBar.progress)
+        binding.mColorValueText.text = color.toHexString().let { if (it.length > 6) it.substring(it.length - 6, it.length) else it }
+        binding.mColorValueBackground.backgroundTintList = ColorStateList.valueOf(color)
         callback.invoke(color)
         setupViewTheme()
     }

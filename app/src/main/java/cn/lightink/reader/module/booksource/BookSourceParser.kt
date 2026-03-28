@@ -80,9 +80,8 @@ class BookSourceParser(val bookSource: BookSource) {
         getCache<List<SearchMetadata>>(cacheKey)?.let { return it }
         
         val result = if (bookSource.type == "js") {
-            bookSource.js.search(key)?.map { t ->
-                SearchMetadata(t.name, t.author, t.cover, "", t.detail)
-            }.orEmpty()
+            // 暂时禁用 JS 书源，因为 QuickJS 库缺失
+            emptyList()
         } else {
             performSearch(key)
         }
@@ -332,11 +331,8 @@ class BookSourceParser(val bookSource: BookSource) {
      */
     fun searchCover(bookName: String): String {
         if (bookSource.type == "js") {
-            try {
-                return bookSource.js.search(bookName)?.firstOrNull { it.name == bookName }?.cover ?: EMPTY
-            } catch (e: Exception) {
-                Log.w("BookSourceParser", "searchCover error, bookName: $bookName, bookSource: ${bookSource.url}", e)
-            }
+            // 暂时禁用 JS 书源，因为 QuickJS 库缺失
+            return EMPTY
         } else {
             val results = performSearch(bookName)
             return results.firstOrNull { it.name == bookName }?.cover ?: EMPTY

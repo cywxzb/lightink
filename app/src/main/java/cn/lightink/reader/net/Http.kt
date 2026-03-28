@@ -1,6 +1,5 @@
 package cn.lightink.reader.net
 
-import cn.lightink.reader.BuildConfig
 import cn.lightink.reader.ktx.fromJson
 import cn.lightink.reader.ktx.string
 import cn.lightink.reader.model.Result
@@ -30,7 +29,7 @@ object Http {
     internal val client by lazy {
         val x509TrustManager = buildX509TrustManager()
         OkHttpClient.Builder()
-                .addInterceptor(HttpLoggingInterceptor().apply { level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE })
+                .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
                 .protocols(listOf(Protocol.HTTP_1_1))
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)

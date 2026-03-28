@@ -9,41 +9,43 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.BookSourceController
+import cn.lightink.reader.databinding.ActivityBooksourceVerifyBinding
 import cn.lightink.reader.ktx.change
 import cn.lightink.reader.ktx.toast
 import cn.lightink.reader.module.TOAST_TYPE_SUCCESS
 import cn.lightink.reader.ui.base.LifecycleActivity
-import kotlinx.android.synthetic.main.activity_booksource_verify.*
 
 class BookSourceVerifyActivity : LifecycleActivity() {
 
     private val clipboard by lazy { applicationContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager }
     private val controller by lazy { ViewModelProvider(this).get(BookSourceController::class.java) }
+    private lateinit var binding: ActivityBooksourceVerifyBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_booksource_verify)
-        mBookSourceVerifyTextField.change { text ->
-            mBookSourceVerifyTextFieldLayout.error = null
-            mBookSourceVerifyButton.isEnabled = URLUtil.isNetworkUrl(text)
+        binding = ActivityBooksourceVerifyBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.mBookSourceVerifyTextField.change { text ->
+            binding.mBookSourceVerifyTextFieldLayout.error = null
+            binding.mBookSourceVerifyButton.isEnabled = URLUtil.isNetworkUrl(text)
         }
-        mBookSourceVerifyButton.setOnClickListener { verify(mBookSourceVerifyTextField.text.toString()) }
+        binding.mBookSourceVerifyButton.setOnClickListener { verify(binding.mBookSourceVerifyTextField.text.toString()) }
     }
 
     private fun verify(url: String) {
-        mBookSourceVerifyTextFieldLayout.isEnabled = false
-        mBookSourceVerifyTextFieldLayout.error = null
-        mBookSourceVerifyLoading.isVisible = true
-        mBookSourceVerifyButton.isVisible = false
+        binding.mBookSourceVerifyTextFieldLayout.isEnabled = false
+        binding.mBookSourceVerifyTextFieldLayout.error = null
+        binding.mBookSourceVerifyLoading.isVisible = true
+        binding.mBookSourceVerifyButton.isVisible = false
         controller.verifyRepository(url).observe(this, Observer { message ->
-            mBookSourceVerifyTextFieldLayout.isEnabled = true
-            mBookSourceVerifyLoading.isVisible = false
-            mBookSourceVerifyButton.isVisible = true
+            binding.mBookSourceVerifyTextFieldLayout.isEnabled = true
+            binding.mBookSourceVerifyLoading.isVisible = false
+            binding.mBookSourceVerifyButton.isVisible = true
             if (message.isNotBlank()) {
-                mBookSourceVerifyTextFieldLayout.error = message
+                binding.mBookSourceVerifyTextFieldLayout.error = message
             } else {
-                mBookSourceVerifyTextField.text?.clear()
-                mBookSourceVerifyTextField.requestFocus()
+                binding.mBookSourceVerifyTextField.text?.clear()
+                binding.mBookSourceVerifyTextField.requestFocus()
                 toast(R.string.booksource_verify_success, TOAST_TYPE_SUCCESS)
             }
         })
@@ -52,8 +54,8 @@ class BookSourceVerifyActivity : LifecycleActivity() {
     override fun onResume() {
         super.onResume()
         if(clipboard.hasPrimaryClip() && URLUtil.isNetworkUrl(clipboard.primaryClip?.getItemAt(0)?.text?.toString())) {
-            mBookSourceVerifyTextField.setText(clipboard.primaryClip?.getItemAt(0)?.text?.toString())
-            mBookSourceVerifyTextField.setSelection(mBookSourceVerifyTextField.text?.length ?: 0)
+            binding.mBookSourceVerifyTextField.setText(clipboard.primaryClip?.getItemAt(0)?.text?.toString())
+            binding.mBookSourceVerifyTextField.setSelection(binding.mBookSourceVerifyTextField.text?.length ?: 0)
         }
     }
 }

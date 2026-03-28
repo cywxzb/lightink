@@ -113,6 +113,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     // implementation("com.github.chimisgo:quickjs-android:1.0")
+    // QuickJS 库暂时禁用，因为找不到合适的替代库
 
     // 测试依赖
     testImplementation 'junit:junit:4.13.2'

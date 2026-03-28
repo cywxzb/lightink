@@ -13,17 +13,18 @@ import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.PopupReaderPreviewBinding
 import cn.lightink.reader.ktx.toast
 import cn.lightink.reader.module.FontModule
 import cn.lightink.reader.module.Room
 import cn.lightink.reader.module.TOAST_TYPE_SUCCESS
 import cn.lightink.reader.ui.bookshelf.SelectPreferredBookshelfDialog
-import kotlinx.android.synthetic.main.popup_reader_preview.view.*
 
 @SuppressLint("InflateParams")
 class ReaderPreviewPopup(val activity: ReaderActivity) : PopupWindow(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT), LifecycleObserver {
 
     private val controller by lazy { ViewModelProvider(activity)[ReaderController::class.java] }
+    private lateinit var binding: PopupReaderPreviewBinding
 
     init {
         isTouchable = true
@@ -34,12 +35,12 @@ class ReaderPreviewPopup(val activity: ReaderActivity) : PopupWindow(ViewGroup.L
 
     private fun buildContentView(): View {
         val theme = controller.theme
-        val view = LayoutInflater.from(activity).inflate(R.layout.popup_reader_preview, null)
-        view.mPopupButton.backgroundTintList = ColorStateList.valueOf(theme.foreground)
-        view.mPopupButton.setTextColor(theme.content)
-        view.mPopupButton.typeface = FontModule.mCurrentFont.typeface
-        view.mPopupButton.setOnClickListener { insertBookshelf() }
-        return view
+        binding = PopupReaderPreviewBinding.inflate(LayoutInflater.from(activity), null, false)
+        binding.mPopupButton.backgroundTintList = ColorStateList.valueOf(theme.foreground)
+        binding.mPopupButton.setTextColor(theme.content)
+        binding.mPopupButton.typeface = FontModule.mCurrentFont.typeface
+        binding.mPopupButton.setOnClickListener { insertBookshelf() }
+        return binding.root
     }
 
     /**

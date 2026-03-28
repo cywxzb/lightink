@@ -5,18 +5,20 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import cn.lightink.reader.R
+import cn.lightink.reader.databinding.DialogBooksourceScoreBinding
 import cn.lightink.reader.model.BookSource
-import kotlinx.android.synthetic.main.dialog_booksource_score.*
 
 class BookSourceScoreDialog(context: Context, val bookSource: BookSource) : Dialog(context) {
 
     private var callback: ((Float) -> Unit)? = null
+    private lateinit var binding: DialogBooksourceScoreBinding
 
     init {
-        setContentView(R.layout.dialog_booksource_score)
-        mBookSourceScoreRating.setOnRatingBarChangeListener { _, rating, _ -> mBookSourceScoreSubmit.isEnabled = rating > 0F }
-        mBookSourceScoreSubmit.setOnClickListener {
-            callback?.invoke(mBookSourceScoreRating.rating)
+        binding = DialogBooksourceScoreBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.mBookSourceScoreRating.setOnRatingBarChangeListener { _, rating, _ -> binding.mBookSourceScoreSubmit.isEnabled = rating > 0F }
+        binding.mBookSourceScoreSubmit.setOnClickListener {
+            callback?.invoke(binding.mBookSourceScoreRating.rating)
             dismiss()
         }
     }

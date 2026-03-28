@@ -72,7 +72,7 @@ class ReaderActivity : LifecycleActivity() {
     private val pagerHelper by lazy { androidx.recyclerview.widget.PagerSnapHelper() }
     private val adapter by lazy { buildAdapter() }
     private lateinit var binding: ActivityReaderBinding
-    private var behavior: BottomSheetBehavior<View>? = null
+    private lateinit var behavior: BottomSheetBehavior<View>
     private var initialized: Pair<Int, Int>? = null
     private val titleResIds = arrayOf(R.string.summary, R.string.catalog, R.string.all)
 
@@ -243,10 +243,10 @@ class ReaderActivity : LifecycleActivity() {
                         val justifyView = this.children.firstOrNull { it is JustifyView } as? JustifyView ?: return@run
                         val current = adapter.currentList.getOrNull(firstVisibleItemPosition) ?: return@run
                         val index = max(progress - current.start, 0)
-                        mReaderPager.requestFocus()
-                        mReaderPager.scrollBy(0, justifyView.top + justifyView.findVerticalByIndex(index))
+                        binding.mReaderPager.requestFocus()
+                        binding.mReaderPager.scrollBy(0, justifyView.top + justifyView.findVerticalByIndex(index))
                     }
-                    mReaderLoading.isVisible = false
+                    binding.mReaderLoading.isVisible = false
                     initialized = null
                 }
             }, 100)
@@ -258,7 +258,7 @@ class ReaderActivity : LifecycleActivity() {
      */
     private fun addOrRemoveBookmark() {
         controller.addOrRemoveBookmark().observe(this, Observer {
-            mReaderBookmarkHeader.exist = it
+            binding.mReaderBookmarkHeader.exist = it
             controller.currentPage?.run { adapter.notifyItemChanged(adapter.currentList.indexOf(this), this) }
         })
     }
@@ -275,8 +275,8 @@ class ReaderActivity : LifecycleActivity() {
             if (page.type != PageType.BOOKLET && page.type != PageType.ARTICLE) return
             //可下拉添加书签
             if (layoutManager.orientation == LinearLayoutManager.HORIZONTAL && controller.pullBookmarkEnableLiveData.value == true) {
-                mReaderFlexLayout.setEnableRefresh(page.type == PageType.ARTICLE)
-                controller.hasBookmark(page).observe(this@ReaderActivity, Observer { mReaderBookmarkHeader.exist = it })
+                binding.mReaderFlexLayout.setEnableRefresh(page.type == PageType.ARTICLE)
+                controller.hasBookmark(page).observe(this@ReaderActivity, Observer { binding.mReaderBookmarkHeader.exist = it })
             }
             var offset = max((page.end - page.start) / 2, 0)
             if (!isHorizontal) {
@@ -310,17 +310,17 @@ class ReaderActivity : LifecycleActivity() {
         behavior.expandedOffset = controller.defaultExpandedOffset.toInt()
         behavior.addBottomSheetCallback(buildBottomSheetCallback())
         behavior.setPeekHeight((resources.getDimension(R.dimen.topbarDefaultSize) * 2 + controller.defaultCatalogHeight + getRealNavigationBarHeight() + px(8)).toInt(), false)
-        mReaderMenuTabLine.updateLayoutParams<RelativeLayout.LayoutParams> { setMargins(0, (behavior.peekHeight - controller.defaultMenuActionHeight - getRealNavigationBarHeight()).toInt(), 0, 0) }
-        mReaderMenuPager.isUserInputEnabled = false
-        mReaderMenuPager.isSaveEnabled = false
-        mReaderMenuPager.offscreenPageLimit = 2
-        mReaderMenuPager.adapter = FragmentPagerAdapter(this)
-        mReaderMenuPager.setCurrentItem(1, false)
-        TabLayoutMediator(mReaderMenuTab, mReaderMenuPager, true, false) { tab, position -> tab.apply { setText(titleResIds[position]) }.setTypeface(controller.paint.typeface) }.attach()
+        binding.mReaderMenuTabLine.updateLayoutParams<RelativeLayout.LayoutParams> { setMargins(0, (behavior.peekHeight - controller.defaultMenuActionHeight - getRealNavigationBarHeight()).toInt(), 0, 0) }
+        binding.mReaderMenuPager.isUserInputEnabled = false
+        binding.mReaderMenuPager.isSaveEnabled = false
+        binding.mReaderMenuPager.offscreenPageLimit = 2
+        binding.mReaderMenuPager.adapter = FragmentPagerAdapter(this)
+        binding.mReaderMenuPager.setCurrentItem(1, false)
+        TabLayoutMediator(binding.mReaderMenuTab, binding.mReaderMenuPager, true, false) { tab, position -> tab.apply { setText(titleResIds[position]) }.setTypeface(controller.paint.typeface) }.attach()
         //菜单默认底部Padding
         controller.defaultMenuPaddingBottom = getRealNavigationBarHeight() + resources.getDimensionPixelSize(R.dimen.topbarDefaultSize) + controller.defaultExpandedOffset.toInt()
         //目录本章页码SEEK回调
-        controller.pageSeekCallback = { index -> mReaderPager.scrollToPosition(index) }
+        controller.pageSeekCallback = { index -> binding.mReaderPager.scrollToPosition(index) }
         controller.menuHiddenStateLiveData.observe(this, Observer { showOrHideMenu(it) })
     }
 
@@ -333,7 +333,7 @@ class ReaderActivity : LifecycleActivity() {
             if (offset in 0.0F..1.0F) {
                 val bottomSheetHeight = bottomSheet.height - controller.defaultExpandedOffset
                 controller.bottomSheetOffsetCallbacks.forEach { it.invoke((bottomSheetHeight - behavior.peekHeight) * offset, offset) }
-                mReaderMenuTabLine.updateLayoutParams<RelativeLayout.LayoutParams> { setMargins(0, ((bottomSheetHeight - behavior.peekHeight) * offset + behavior.peekHeight - controller.defaultMenuActionHeight - getRealNavigationBarHeight()).toInt(), 0, 0) }
+                binding.mReaderMenuTabLine.updateLayoutParams<RelativeLayout.LayoutParams> { setMargins(0, ((bottomSheetHeight - behavior.peekHeight) * offset + behavior.peekHeight - controller.defaultMenuActionHeight - getRealNavigationBarHeight()).toInt(), 0, 0) }
             }
             if (offset in -1F..0F) {
                 catalogLayoutManager.scrollToPositionWithOffset(max(controller.book.chapter - 1, 0), 0)
@@ -348,12 +348,12 @@ class ReaderActivity : LifecycleActivity() {
     }
 
     private fun setupMenuTheme() {
-        mTopIndicator.backgroundTintList = ColorStateList.valueOf(controller.theme.secondary)
-        mReaderMenuLayout.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        mReaderMenuTabLine.setBackgroundColor(controller.theme.content)
-        mReaderMenuTab.setBackgroundColor(controller.theme.foreground)
-        mReaderMenuTab.setTabTextColors(controller.theme.secondary, controller.theme.control)
-        (0 until mReaderMenuTab.tabCount).map { mReaderMenuTab.getTabAt(it) }.forEach { tab -> tab.setTypeface(controller.paint.typeface) }
+        binding.mTopIndicator.backgroundTintList = ColorStateList.valueOf(controller.theme.secondary)
+        binding.mReaderMenuLayout.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mReaderMenuTabLine.setBackgroundColor(controller.theme.content)
+        binding.mReaderMenuTab.setBackgroundColor(controller.theme.foreground)
+        binding.mReaderMenuTab.setTabTextColors(controller.theme.secondary, controller.theme.control)
+        (0 until binding.mReaderMenuTab.tabCount).map { binding.mReaderMenuTab.getTabAt(it) }.forEach { tab -> tab.setTypeface(controller.paint.typeface) }
     }
 
     /**
@@ -370,7 +370,7 @@ class ReaderActivity : LifecycleActivity() {
         } else {
             if (behavior.state != STATE_HIDDEN) behavior.state = STATE_HIDDEN
             setupWindowPreference()
-            mReaderMenuPager.setCurrentItem(1, false)
+            binding.mReaderMenuPager.setCurrentItem(1, false)
         }
     }
 
@@ -463,9 +463,9 @@ class ReaderActivity : LifecycleActivity() {
      */
     private fun flipNext() {
         if (Preferences.get(Preferences.Key.TURN_ANIMATE, true)) {
-            mReaderPager.smoothScrollBy(mReaderPager.width, 0)
+            binding.mReaderPager.smoothScrollBy(binding.mReaderPager.width, 0)
         } else {
-            mReaderPager.scrollBy(mReaderPager.width, 0)
+            binding.mReaderPager.scrollBy(binding.mReaderPager.width, 0)
         }
     }
 
@@ -474,9 +474,9 @@ class ReaderActivity : LifecycleActivity() {
      */
     private fun flipPrevious() {
         if (Preferences.get(Preferences.Key.TURN_ANIMATE, true)) {
-            mReaderPager.smoothScrollBy(-mReaderPager.width, 0)
+            binding.mReaderPager.smoothScrollBy(-binding.mReaderPager.width, 0)
         } else {
-            mReaderPager.scrollBy(-mReaderPager.width, 0)
+            binding.mReaderPager.scrollBy(-binding.mReaderPager.width, 0)
         }
     }
 
@@ -540,7 +540,7 @@ class ReaderActivity : LifecycleActivity() {
             //长按事件
             is Notify.ReaderViewLongClickedEvent -> {
                 layoutManager.scrollable = !event.isLongClicked
-                mReaderFlexLayout.setEnableRefresh(!event.isLongClicked)
+                binding.mReaderFlexLayout.setEnableRefresh(!event.isLongClicked)
             }
             //净化内容
             is Notify.ReaderViewPurifyEvent -> ReaderPurifyCreateDialog(this, event.content).show()
@@ -617,53 +617,55 @@ class ReaderActivity : LifecycleActivity() {
      * 插画页
      */
     private fun bindIllustrationPage(holder: View, page: Page) {
+        val binding = ItemPageIllustrationBinding.bind(holder)
         val image = page.cells.first().image
         val options = BitmapFactory.Options()
         options.inJustDecodeBounds = true
         BitmapFactory.decodeFile(image, options)
-        holder.mIllustrationView.layoutParams.width = controller.display.width
-        holder.mIllustrationView.layoutParams.height = options.outHeight * controller.display.width / options.outWidth
-        holder.mIllustrationView.none().load(image)
+        binding.mIllustrationView.layoutParams.width = controller.display.width
+        binding.mIllustrationView.layoutParams.height = options.outHeight * controller.display.width / options.outWidth
+        binding.mIllustrationView.none().load(image)
     }
 
     /**
      * 文章页
      */
     private fun bindArticlePage(view: View, page: Page) {
-        view.mPageLayout.setPadding(controller.display.horizontal, controller.display.top, controller.display.horizontal, controller.display.bottom)
-        arrayOf(view.mPageTitle, view.mPageSchedule, view.mPageTime).forEach { child -> child.setTextColor(controller.theme.secondary) }
+        val binding = ItemPageArticleBinding.bind(view)
+        binding.mPageLayout.setPadding(controller.display.horizontal, controller.display.top, controller.display.horizontal, controller.display.bottom)
+        arrayOf(binding.mPageTitle, binding.mPageSchedule, binding.mPageTime).forEach { child -> child.setTextColor(controller.theme.secondary) }
         //书签
-        (view.mPageBookmark.layoutParams as RelativeLayout.LayoutParams).marginEnd = controller.display.horizontal
-        controller.hasBookmark(page).observe(this, Observer { view.mPageBookmark.isVisible = it })
-        view.mPageBookmark.imageTintList = ColorStateList.valueOf(controller.theme.control)
+        (binding.mPageBookmark.layoutParams as RelativeLayout.LayoutParams).marginEnd = controller.display.horizontal
+        controller.hasBookmark(page).observe(this, Observer { binding.mPageBookmark.isVisible = it })
+        binding.mPageBookmark.imageTintList = ColorStateList.valueOf(controller.theme.control)
         //标题
-        view.mPageTitle.isVisible = Preferences.get(Preferences.Key.SHOW_TITLE, true)
-        view.mPageTitle.setPadding(0, 0, 0, 0)
-        view.mPageTitle.text = if (page.cells.any { it.type == CellType.TITLE }) controller.book.name else page.chapter.title
-        view.mPageTitle.typeface = controller.paint.typeface
-        view.mPageTitle.setTextColor(controller.theme.secondary)
+        binding.mPageTitle.isVisible = Preferences.get(Preferences.Key.SHOW_TITLE, true)
+        binding.mPageTitle.setPadding(0, 0, 0, 0)
+        binding.mPageTitle.text = if (page.cells.any { it.type == CellType.TITLE }) controller.book.name else page.chapter.title
+        binding.mPageTitle.typeface = controller.paint.typeface
+        binding.mPageTitle.setTextColor(controller.theme.secondary)
         //内置状态栏
-        view.mPageStatusBar.isVisible = Preferences.get(Preferences.Key.CUSTOM_STATUS_BAR, true)
+        binding.mPageStatusBar.isVisible = Preferences.get(Preferences.Key.CUSTOM_STATUS_BAR, true)
         //时间
-        view.mPageTime.typeface = controller.paint.typeface
-        view.mPageTime.paint.isFakeBoldText = controller.paint.isFakeBoldText
-        view.mPageTime.setTextColor(controller.theme.secondary)
+        binding.mPageTime.typeface = controller.paint.typeface
+        binding.mPageTime.paint.isFakeBoldText = controller.paint.isFakeBoldText
+        binding.mPageTime.setTextColor(controller.theme.secondary)
         //电量
-        view.mPageBattery.imageTintList = ColorStateList.valueOf(controller.theme.secondary)
+        binding.mPageBattery.imageTintList = ColorStateList.valueOf(controller.theme.secondary)
         //进度
         val list = adapter.currentList.filter { it.chapter == page.chapter }
-        view.mPageSchedule.isVisible = Preferences.get(Preferences.Key.SHOW_TITLE, true)
-        view.mPageSchedule.typeface = controller.paint.typeface
-        view.mPageSchedule.setTextColor(controller.theme.secondary)
-        view.mPageSchedule.text = if (controller.pageNumber.containsKey(page.chapter.index)) String.format("%d/%d", list.indexOf(page) + 1, controller.pageNumber.get(page.chapter.index)) else EMPTY
+        binding.mPageSchedule.isVisible = Preferences.get(Preferences.Key.SHOW_TITLE, true)
+        binding.mPageSchedule.typeface = controller.paint.typeface
+        binding.mPageSchedule.setTextColor(controller.theme.secondary)
+        binding.mPageSchedule.text = if (controller.pageNumber.containsKey(page.chapter.index)) String.format("%d/%d", list.indexOf(page) + 1, controller.pageNumber.get(page.chapter.index)) else EMPTY
         //内容
-        view.container.removeAllViews()
-        view.container.setPadding(0, controller.display.titleSpacingHeight, 0, 0)
+        binding.container.removeAllViews()
+        binding.container.setPadding(0, controller.display.titleSpacingHeight, 0, 0)
         page.cells.forEach { cell ->
             when (cell.type) {
-                CellType.TITLE -> view.container.addView(buildTitle(cell), LinearLayout.LayoutParams.MATCH_PARENT, controller.display.fixed)
-                CellType.TEXT -> view.container.addView(buildText(cell, false), LinearLayout.LayoutParams.MATCH_PARENT, if (cell.size.height > 0) cell.size.height else LinearLayout.LayoutParams.WRAP_CONTENT)
-                CellType.IMAGE -> view.container.addView(buildImage(cell), ViewGroup.LayoutParams.MATCH_PARENT, cell.size.height)
+                CellType.TITLE -> binding.container.addView(buildTitle(cell), LinearLayout.LayoutParams.MATCH_PARENT, controller.display.fixed)
+                CellType.TEXT -> binding.container.addView(buildText(cell, false), LinearLayout.LayoutParams.MATCH_PARENT, if (cell.size.height > 0) cell.size.height else LinearLayout.LayoutParams.WRAP_CONTENT)
+                CellType.IMAGE -> binding.container.addView(buildImage(cell), ViewGroup.LayoutParams.MATCH_PARENT, cell.size.height)
             }
         }
     }
@@ -672,14 +674,15 @@ class ReaderActivity : LifecycleActivity() {
      * 文章页
      */
     private fun bindArticleVerticalPage(holder: View, page: Page) {
+        val binding = ItemPageArticleBinding.bind(holder)
         holder.setPadding(controller.display.horizontal, 0, controller.display.horizontal, 0)
         //内容
-        holder.container.removeAllViews()
+        binding.container.removeAllViews()
         page.cells.forEach { cell ->
             when (cell.type) {
-                CellType.TITLE -> holder.container.addView(buildTitle(cell), LinearLayout.LayoutParams.MATCH_PARENT, controller.display.fixed)
-                CellType.TEXT -> holder.container.addView(buildText(cell, true), LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-                CellType.IMAGE -> holder.container.addView(buildImage(cell), ViewGroup.LayoutParams.MATCH_PARENT, cell.size.height)
+                CellType.TITLE -> binding.container.addView(buildTitle(cell), LinearLayout.LayoutParams.MATCH_PARENT, controller.display.fixed)
+                CellType.TEXT -> binding.container.addView(buildText(cell, true), LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                CellType.IMAGE -> binding.container.addView(buildImage(cell), ViewGroup.LayoutParams.MATCH_PARENT, cell.size.height)
             }
         }
     }
@@ -688,60 +691,63 @@ class ReaderActivity : LifecycleActivity() {
      * 加载页
      */
     private fun bindLoadingPage(holder: View, page: Page) {
+        val binding = ItemPageLoadingBinding.bind(holder)
         holder.setPadding(controller.display.horizontal, controller.display.top, controller.display.horizontal, controller.display.bottom)
-        holder.mLoadingBar.indeterminateTintList = ColorStateList.valueOf(controller.theme.control)
-        holder.mLoadingTitle.text = page.chapter.title
-        holder.mLoadingTitle.typeface = controller.paint.typeface
-        holder.mLoadingTitle.setTextColor(controller.theme.content)
+        binding.mLoadingBar.indeterminateTintList = ColorStateList.valueOf(controller.theme.control)
+        binding.mLoadingTitle.text = page.chapter.title
+        binding.mLoadingTitle.typeface = controller.paint.typeface
+        binding.mLoadingTitle.setTextColor(controller.theme.content)
     }
 
     /**
      * 错误页
      */
     private fun bindErrorPage(holder: View, page: Page) {
+        val binding = ItemPageErrorBinding.bind(holder)
         holder.setPadding(controller.display.horizontal, controller.display.top, controller.display.horizontal, controller.display.bottom)
-        holder.mErrorImage.imageTintList = ColorStateList.valueOf(controller.theme.secondary)
-        holder.mErrorTitle.text = buildTitleSpannable(page.chapter.title)
-        holder.mErrorTitle.setTextColor(controller.theme.content)
-        holder.mErrorTitle.typeface = controller.paint.typeface
-        holder.mErrorMenu.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        holder.mErrorUrl.text = page.chapter.href
-        holder.mErrorUrl.typeface = controller.paint.typeface
-        holder.mErrorUrl.setTextColor(controller.theme.secondary)
-        holder.mErrorWeb.setTextColor(controller.theme.secondary)
-        holder.mErrorWeb.typeface = controller.paint.typeface
-        holder.mErrorWeb.setOnClickListener {
+        binding.mErrorImage.imageTintList = ColorStateList.valueOf(controller.theme.secondary)
+        binding.mErrorTitle.text = buildTitleSpannable(page.chapter.title)
+        binding.mErrorTitle.setTextColor(controller.theme.content)
+        binding.mErrorTitle.typeface = controller.paint.typeface
+        binding.mErrorMenu.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mErrorUrl.text = page.chapter.href
+        binding.mErrorUrl.typeface = controller.paint.typeface
+        binding.mErrorUrl.setTextColor(controller.theme.secondary)
+        binding.mErrorWeb.setTextColor(controller.theme.secondary)
+        binding.mErrorWeb.typeface = controller.paint.typeface
+        binding.mErrorWeb.setOnClickListener {
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(page.chapter.href)))
             } catch (e: Exception) {
                 toast(if (URLUtil.isNetworkUrl(page.chapter.href)) "未安装浏览器应用" else "无法访问非法的网页")
             }
         }
-        holder.mErrorTry.setTextColor(controller.theme.content)
-        holder.mErrorTry.typeface = controller.paint.typeface
-        holder.mErrorTry.setOnClickListener { controller.refresh() }
+        binding.mErrorTry.setTextColor(controller.theme.content)
+        binding.mErrorTry.typeface = controller.paint.typeface
+        binding.mErrorTry.setOnClickListener { controller.refresh() }
     }
 
     /**
      * 登录页
      */
     private fun bindAuthPage(holder: View, page: Page) {
+        val binding = ItemPageAuthBinding.bind(holder)
         holder.setPadding(controller.display.horizontal, controller.display.top, controller.display.horizontal, controller.display.bottom)
-        holder.mAuthTitle.text = buildTitleSpannable(page.chapter.title)
-        holder.mAuthTitle.setTextColor(controller.theme.content)
-        holder.mAuthTitle.typeface = controller.paint.typeface
-        holder.mAuthMenu.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        holder.mAuthTips.setText(if (page.type == PageType.AUTH) R.string.reader_auth_tips else R.string.reader_auth_buy_tips)
-        holder.mAuthTips.setTextColor(controller.theme.secondary)
-        holder.mAuthTips.typeface = controller.paint.typeface
-        holder.mAuthLogin.setText(if (page.type == PageType.AUTH) R.string.reader_auth_login else R.string.reader_auth_buy_login)
-        holder.mAuthLogin.setTextColor(controller.theme.content)
-        holder.mAuthLogin.typeface = controller.paint.typeface
-        holder.mAuthLogin.setOnClickListener {
+        binding.mAuthTitle.text = buildTitleSpannable(page.chapter.title)
+        binding.mAuthTitle.setTextColor(controller.theme.content)
+        binding.mAuthTitle.typeface = controller.paint.typeface
+        binding.mAuthMenu.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mAuthTips.setText(if (page.type == PageType.AUTH) R.string.reader_auth_tips else R.string.reader_auth_buy_tips)
+        binding.mAuthTips.setTextColor(controller.theme.secondary)
+        binding.mAuthTips.typeface = controller.paint.typeface
+        binding.mAuthLogin.setText(if (page.type == PageType.AUTH) R.string.reader_auth_login else R.string.reader_auth_buy_login)
+        binding.mAuthLogin.setTextColor(controller.theme.content)
+        binding.mAuthLogin.typeface = controller.paint.typeface
+        binding.mAuthLogin.setOnClickListener {
             if (controller.book.getBookSource() is BookSourceParser) {
                 startActivityForResult(Intent(this, BookSourceAuthActivity::class.java).putExtra(INTENT_BOOK_SOURCE, (controller.book.getBookSource() as BookSourceParser).bookSource.url), Activity.RESULT_FIRST_USER)
             } else {
-                holder.mAuthLogin.setText(R.string.reader_auth_deprecated)
+                binding.mAuthLogin.setText(R.string.reader_auth_deprecated)
             }
         }
     }
@@ -750,24 +756,25 @@ class ReaderActivity : LifecycleActivity() {
      * 结束页
      */
     private fun buildEndPage(holder: View) {
+        val binding = ItemPageEndBinding.bind(holder)
         holder.setPadding(controller.display.horizontal, controller.display.top, controller.display.horizontal, controller.display.bottom)
-        holder.mEndTitle.typeface = controller.paint.typeface
-        holder.mEndTitle.setTextColor(controller.theme.content)
-        holder.mEndTitle.text = controller.book.name
-        holder.mEndAuthor.typeface = controller.paint.typeface
-        holder.mEndAuthor.setTextColor(controller.theme.content)
-        holder.mEndAuthor.text = controller.book.author
-        holder.mEndCover.load(controller.book.cover)
-        holder.mEndCount.typeface = controller.paint.typeface
-        holder.mEndCount.setTextColor(controller.theme.secondary)
-        holder.mEndCount.text = getString(R.string.read_end_count, controller.book.time / 60, controller.book.speed.toInt())
-        holder.mEndChapter.typeface = controller.paint.typeface
-        holder.mEndChapter.setTextColor(controller.theme.secondary)
-        holder.mEndChapter.text = getString(R.string.read_end_chapter, controller.catalog.size, min(Room.bookRecord().count(controller.book.objectId), controller.catalog.size))
-        holder.mEndStatus.typeface = controller.paint.typeface
-        holder.mEndStatus.setTextColor(controller.theme.control)
-        holder.mEndStatus.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
-        holder.mEndStatus.text = when {
+        binding.mEndTitle.typeface = controller.paint.typeface
+        binding.mEndTitle.setTextColor(controller.theme.content)
+        binding.mEndTitle.text = controller.book.name
+        binding.mEndAuthor.typeface = controller.paint.typeface
+        binding.mEndAuthor.setTextColor(controller.theme.content)
+        binding.mEndAuthor.text = controller.book.author
+        binding.mEndCover.load(controller.book.cover)
+        binding.mEndCount.typeface = controller.paint.typeface
+        binding.mEndCount.setTextColor(controller.theme.secondary)
+        binding.mEndCount.text = getString(R.string.read_end_count, controller.book.time / 60, controller.book.speed.toInt())
+        binding.mEndChapter.typeface = controller.paint.typeface
+        binding.mEndChapter.setTextColor(controller.theme.secondary)
+        binding.mEndChapter.text = getString(R.string.read_end_chapter, controller.catalog.size, min(Room.bookRecord().count(controller.book.objectId), controller.catalog.size))
+        binding.mEndStatus.typeface = controller.paint.typeface
+        binding.mEndStatus.setTextColor(controller.theme.control)
+        binding.mEndStatus.backgroundTintList = ColorStateList.valueOf(controller.theme.foreground)
+        binding.mEndStatus.text = when {
             controller.preview -> R.string.read_status_preview
             controller.book.finishedAt > 0 -> R.string.read_status_end
             controller.isHaveRead() && controller.book.state == BOOK_STATE_END -> {

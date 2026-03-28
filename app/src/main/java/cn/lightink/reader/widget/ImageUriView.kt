@@ -126,13 +126,13 @@ class ImageUriView @JvmOverloads constructor(context: Context, attrs: AttributeS
                     .apply(RequestOptions().transform(CenterCrop(), RoundWithBorderTransform(context.applicationContext, radius)))
                     .transition(DrawableTransitionOptions.withCrossFade())
                     .listener(object : RequestListener<Drawable> {
-                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
+                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>, isFirstResource: Boolean): Boolean {
                             failure?.invoke()
                             isEnabled = false
                             return hint.isBlank()
                         }
 
-                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                        override fun onResourceReady(resource: Drawable, model: Any, target: Target<Drawable>, dataSource: DataSource, isFirstResource: Boolean): Boolean {
                             resource?.run { onResourceReady(this, onResourceReady) }
                             return false
                         }
@@ -150,7 +150,7 @@ class ImageUriView @JvmOverloads constructor(context: Context, attrs: AttributeS
         }
     }
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         try {
             super.onDraw(canvas)
         } catch (e: Exception) {

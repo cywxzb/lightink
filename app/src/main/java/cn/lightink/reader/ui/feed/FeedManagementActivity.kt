@@ -6,6 +6,9 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.FeedController
+import cn.lightink.reader.databinding.ActivityFeedManagementBinding
+import cn.lightink.reader.databinding.ItemFeedGroupManagementBinding
+import cn.lightink.reader.databinding.ItemFeedManagementBinding
 import cn.lightink.reader.ktx.toast
 import cn.lightink.reader.model.Feed
 import cn.lightink.reader.model.FeedGroup
@@ -15,21 +18,20 @@ import cn.lightink.reader.module.Room
 import cn.lightink.reader.module.TOAST_TYPE_SUCCESS
 import cn.lightink.reader.ui.base.BottomSelectorDialog
 import cn.lightink.reader.ui.base.LifecycleActivity
-import kotlinx.android.synthetic.main.activity_feed_management.*
-import kotlinx.android.synthetic.main.item_feed_group_management.view.*
-import kotlinx.android.synthetic.main.item_feed_management.view.*
 
 class FeedManagementActivity : LifecycleActivity() {
 
     private val controller by lazy { ViewModelProvider(this)[FeedController::class.java] }
     private val adapter by lazy { buildAdapter() }
+    private lateinit var binding: ActivityFeedManagementBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_feed_management)
-        mTopbar.setOnMenuClickListener { createFeedGroup() }
-        mFeedManageRecycler.layoutManager = RVLinearLayoutManager(this)
-        mFeedManageRecycler.adapter = adapter
+        binding = ActivityFeedManagementBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.mTopbar.setOnMenuClickListener { createFeedGroup() }
+        binding.mFeedManageRecycler.layoutManager = RVLinearLayoutManager(this)
+        binding.mFeedManageRecycler.adapter = adapter
         controller.groupLiveData.observe(this, Observer {
             adapter.submitList(it)
             adapter.notifyItemRangeChanged(0, adapter.itemCount)
@@ -45,27 +47,29 @@ class FeedManagementActivity : LifecycleActivity() {
 
     @Suppress("UNCHECKED_CAST")
     private fun buildAdapter() = ListAdapter<FeedGroup>(R.layout.item_feed_group_management, equalContent = { o, n -> o.name == n.name }, equalItem = { o, n -> o.id == n.id }) { item, group ->
-        item.view.mFeedGroupName.text = group.name
-        item.view.mFeedGroupArrow.setOnClickListener { arrowView ->
-            item.view.mFeedGroupRecycler.isVisible = !item.view.mFeedGroupRecycler.isVisible
-            arrowView.rotation = if (item.view.mFeedGroupRecycler.isVisible) 0F else -90F
+        val binding = ItemFeedGroupManagementBinding.bind(item.view)
+        binding.mFeedGroupName.text = group.name
+        binding.mFeedGroupArrow.setOnClickListener { arrowView ->
+            binding.mFeedGroupRecycler.isVisible = !binding.mFeedGroupRecycler.isVisible
+            arrowView.rotation = if (binding.mFeedGroupRecycler.isVisible) 0F else -90F
         }
-        var adapter = item.view.mFeedGroupRecycler.adapter as? ListAdapter<Feed>
+        var adapter = binding.mFeedGroupRecycler.adapter as? ListAdapter<Feed>
         if (adapter == null) {
             adapter = buildChildAdapter()
-            item.view.mFeedGroupRecycler.adapter = adapter
+            binding.mFeedGroupRecycler.adapter = adapter
         }
         controller.queryFeedsByGroupId(group.id).observe(this, Observer { feeds ->
-            item.view.mFeedGroupRecycler.isVisible = feeds.isNotEmpty()
-            item.view.mFeedGroupArrow.isVisible = feeds.isNotEmpty()
-            item.view.mFeedGroupArrow.rotation = if (item.view.mFeedGroupRecycler.isVisible) 0F else -90F
+            binding.mFeedGroupRecycler.isVisible = feeds.isNotEmpty()
+            binding.mFeedGroupArrow.isVisible = feeds.isNotEmpty()
+            binding.mFeedGroupArrow.rotation = if (binding.mFeedGroupRecycler.isVisible) 0F else -90F
             adapter.submitList(feeds)
         })
         item.view.setOnClickListener { showFeedGroupPopup(group) }
     }
 
     private fun buildChildAdapter() = ListAdapter<Feed>(R.layout.item_feed_management) { item, feed ->
-        item.view.mFeedName.text = feed.name
+        val binding = ItemFeedManagementBinding.bind(item.view)
+        binding.mFeedName.text = feed.name
         item.view.setOnClickListener { showFeedPopup(feed) }
     }
 

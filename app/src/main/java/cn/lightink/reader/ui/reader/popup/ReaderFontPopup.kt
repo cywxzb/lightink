@@ -14,9 +14,9 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.ReaderController
+import cn.lightink.reader.databinding.PopupReaderFontBinding
 import cn.lightink.reader.model.Theme
 import cn.lightink.reader.module.Preferences
-import kotlinx.android.synthetic.main.popup_reader_font.view.*
 import kotlin.math.roundToInt
 
 @SuppressLint("InflateParams")
@@ -24,6 +24,7 @@ class ReaderFontPopup(val context: FragmentActivity) : PopupWindow(LayoutInflate
 
     private val controller by lazy { ViewModelProvider(context)[ReaderController::class.java] }
     private val xAndProgress = PointF()
+    private val binding by lazy { PopupReaderFontBinding.bind(contentView) }
 
     init {
         isOutsideTouchable = true
@@ -37,13 +38,13 @@ class ReaderFontPopup(val context: FragmentActivity) : PopupWindow(LayoutInflate
 
     private fun setupViewData() {
         //字号
-        contentView.mFontSizeBackground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mFontSizeSeekBar, event) }
-        contentView.mFontSizeSeekBar.progress = (Preferences.get(Preferences.Key.FONT_SIZE, 17F) - 14F).toInt()
-        onProgressChanged(contentView.mFontSizeSeekBar)
+        binding.mFontSizeBackground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mFontSizeSeekBar, event) }
+        binding.mFontSizeSeekBar.progress = (Preferences.get(Preferences.Key.FONT_SIZE, 17F) - 14F).toInt()
+        onProgressChanged(binding.mFontSizeSeekBar)
         //字距
-        contentView.mFontDistanceBackground.setOnTouchListener { v, event -> passTouchEvent(v, contentView.mFontDistanceSeekBar, event) }
-        contentView.mFontDistanceSeekBar.progress = (Preferences.get(Preferences.Key.LETTER_SPACING, 0F) * 10).toInt()
-        onProgressChanged(contentView.mFontDistanceSeekBar)
+        binding.mFontDistanceBackground.setOnTouchListener { v, event -> passTouchEvent(v, binding.mFontDistanceSeekBar, event) }
+        binding.mFontDistanceSeekBar.progress = (Preferences.get(Preferences.Key.LETTER_SPACING, 0F) * 10).toInt()
+        onProgressChanged(binding.mFontDistanceSeekBar)
     }
 
     private fun passTouchEvent(formView: View, toView: SeekBar, event: MotionEvent): Boolean {
@@ -60,36 +61,36 @@ class ReaderFontPopup(val context: FragmentActivity) : PopupWindow(LayoutInflate
 
     private fun setupViewTheme(theme: Theme) {
         //字号
-        contentView.mFontSizeForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
-        contentView.mFontSizeBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
-        contentView.mFontSizeText.backgroundTintList = ColorStateList.valueOf(theme.control)
-        contentView.mFontSizeText.setTextColor(theme.foreground)
-        contentView.mFontSizeSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
+        binding.mFontSizeForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
+        binding.mFontSizeBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
+        binding.mFontSizeText.backgroundTintList = ColorStateList.valueOf(theme.control)
+        binding.mFontSizeText.setTextColor(theme.foreground)
+        binding.mFontSizeSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
         //字距
-        contentView.mFontDistanceForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
-        contentView.mFontDistanceBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
-        contentView.mFontDistanceText.backgroundTintList = ColorStateList.valueOf(theme.control)
-        contentView.mFontDistanceText.setTextColor(theme.foreground)
-        contentView.mFontDistanceSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
+        binding.mFontDistanceForeground.backgroundTintList = ColorStateList.valueOf(theme.foreground)
+        binding.mFontDistanceBackground.backgroundTintList = ColorStateList.valueOf(theme.background)
+        binding.mFontDistanceText.backgroundTintList = ColorStateList.valueOf(theme.control)
+        binding.mFontDistanceText.setTextColor(theme.foreground)
+        binding.mFontDistanceSeekBar.progressTintList = ColorStateList.valueOf(theme.control)
     }
 
     private fun onProgressChanged(seekBar: SeekBar) {
         when (seekBar) {
             //字号
-            contentView.mFontSizeSeekBar -> contentView.mFontSizeText.text = context.getString(R.string.reader_setting_font_size, seekBar.progress + 14)
+            binding.mFontSizeSeekBar -> binding.mFontSizeText.text = context.getString(R.string.reader_setting_font_size, seekBar.progress + 14)
             //字间距
-            contentView.mFontDistanceSeekBar -> contentView.mFontDistanceText.text = context.getString(R.string.reader_setting_letter_spacing, seekBar.progress * 0.1F)
+            binding.mFontDistanceSeekBar -> binding.mFontDistanceText.text = context.getString(R.string.reader_setting_letter_spacing, seekBar.progress * 0.1F)
         }
     }
 
     private fun onStopTrackingTouch(seekBar: SeekBar) {
         when (seekBar) {
             //字号
-            contentView.mFontSizeSeekBar -> if (seekBar.progress + 14F != Preferences.get(Preferences.Key.FONT_SIZE, 17F)) {
+            binding.mFontSizeSeekBar -> if (seekBar.progress + 14F != Preferences.get(Preferences.Key.FONT_SIZE, 17F)) {
                 Preferences.put(Preferences.Key.FONT_SIZE, seekBar.progress + 14F).run { controller.setupDisplay(context).jump() }
             }
             //字间距
-            contentView.mFontDistanceSeekBar -> if (seekBar.progress * 0.1F != Preferences.get(Preferences.Key.LETTER_SPACING, 0F)) {
+            binding.mFontDistanceSeekBar -> if (seekBar.progress * 0.1F != Preferences.get(Preferences.Key.LETTER_SPACING, 0F)) {
                 Preferences.put(Preferences.Key.LETTER_SPACING, seekBar.progress * 0.1F).run { controller.setupDisplay(context).jump() }
             }
         }

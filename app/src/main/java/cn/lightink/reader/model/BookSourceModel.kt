@@ -2,7 +2,7 @@ package cn.lightink.reader.model
 
 import androidx.paging.DataSource
 import androidx.room.*
-import cn.lightink.reader.transcode.JavaScriptTranscoder
+// import cn.lightink.reader.transcode.JavaScriptTranscoder
 import cn.lightink.reader.module.booksource.BookSourceJson
 import com.google.gson.Gson
 
@@ -28,8 +28,9 @@ data class BookSource(val id: Int, var name: String, @PrimaryKey val url: String
     val json: BookSourceJson
         get() = Gson().fromJson(content, BookSourceJson::class.java)!!
 
-    val js: JavaScriptTranscoder
-        get() = JavaScriptTranscoder(url, content)
+    // 暂时禁用 JS 书源，因为 QuickJS 库缺失
+    // val js: JavaScriptTranscoder
+    //     get() = JavaScriptTranscoder(url, content)
 
     val author: String
         get() = "${if (-1 > -1) owner else "privacy"}\u2000-\u2000$url\u2000-\u2000$type" //todo
