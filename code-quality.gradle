@@ -1,0 +1,30 @@
+// 代码质量检查与自动修复配置
+// 将此文件应用到 app/build.gradle: apply from: '../code-quality.gradle'
+
+// 代码检查任务
+task codeCheck(group: "verification") {
+    description = "Run all code quality checks (detekt)"
+    dependsOn "detekt"
+}
+
+// 预提交检查任务
+task preCommitCheck(group: "verification") {
+    description = "Run checks before commit"
+    dependsOn "detekt", "lint"
+    doLast {
+        println "✅ 所有代码检查通过，可以提交"
+    }
+}
+
+// 清理并检查
+task cleanCheck(group: "verification") {
+    description = "Clean and run all checks"
+    dependsOn "clean", "codeCheck"
+}
+
+// 配置检查任务依赖
+afterEvaluate {
+    tasks.matching { it.name == "check" }.all {
+        dependsOn "detekt"
+    }
+}
