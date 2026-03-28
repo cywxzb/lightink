@@ -1,0 +1,38 @@
+buildscript {
+    ext.kotlin_version = '1.9.23'
+    ext.ktlint_version = '10.2.1'
+    ext.detekt_version = '1.23.3'
+
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://jitpack.io' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.yanzhenjie.andserver:plugin:2.1.10'
+        classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
+        // 代码检查工具
+        classpath "io.gitlab.arturbosch.detekt:detekt-gradle-plugin:$detekt_version"
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+//        maven { url 'https://dl.bintray.com/umsdk/release' }
+//        maven { url "https://dl.bintray.com/thelasterstar/maven/" }
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url "https://jitpack.io" }
+        flatDir {
+            dirs 'libs'
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
