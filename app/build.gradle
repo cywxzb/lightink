@@ -1,9 +1,9 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'com.yanzhenjie.andserver'
 apply plugin: 'kotlinx-serialization'
+apply plugin: 'kotlin-parcelize'
 // 应用代码质量配置
 apply from: '../code-quality.gradle'
 
