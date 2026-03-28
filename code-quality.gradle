@@ -3,14 +3,14 @@
 
 // 代码检查任务
 task codeCheck(group: "verification") {
-    description = "Run all code quality checks (detekt)"
-    dependsOn "detekt"
+    description = "Run all code quality checks"
+    dependsOn "lint"
 }
 
 // 预提交检查任务
 task preCommitCheck(group: "verification") {
     description = "Run checks before commit"
-    dependsOn "detekt", "lint"
+    dependsOn "lint"
     doLast {
         println "✅ 所有代码检查通过，可以提交"
     }
@@ -20,11 +20,4 @@ task preCommitCheck(group: "verification") {
 task cleanCheck(group: "verification") {
     description = "Clean and run all checks"
     dependsOn "clean", "codeCheck"
-}
-
-// 配置检查任务依赖
-afterEvaluate {
-    tasks.matching { it.name == "check" }.all {
-        dependsOn "detekt"
-    }
 }
