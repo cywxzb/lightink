@@ -711,4 +711,4 @@ style:
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
     excludeImports:
       - 'java.util.*'
-      - 'kotlinx.android.s
+      - 'kotlinx.android.synthetic.*'
