@@ -115,12 +115,8 @@ class BookSourceParser(val bookSource: BookSource) {
         getCache<DetailMetadata>(cacheKey)?.let { return it }
         
         val result = if (bookSource.type == "js") {
-            val r = bookSource.js.detail(metadata.detail)
-            if (r != null) {
-                DetailMetadata(metadata.name, metadata.author, metadata.cover, r.summary, r.status, r.update, r.lastChapter, metadata.detail, r.catalog)
-            } else {
-                null
-            }
+            // 暂时禁用 JS 书源，因为 QuickJS 库缺失
+            null
         } else {
             val response = BookSourceInterpreter.execute(metadata.detail, bookSource.json.auth) ?: return null
             val detail = findDetailMetadata(metadata.detail, response)
@@ -149,7 +145,8 @@ class BookSourceParser(val bookSource: BookSource) {
         }
         
         val result = if (bookSource.type == "js") {
-            bookSource.js.catalog(metadata.catalog.toString())?.map { Chapter(it.name, it.url, it.vip) }.orEmpty()
+            // 暂时禁用 JS 书源，因为 QuickJS 库缺失
+            emptyList<Chapter>()
         } else {
             val response = if (metadata.catalog is BookSourceResponse) metadata.catalog as BookSourceResponse else {
                 urls.add(metadata.catalog as String)
@@ -237,7 +234,8 @@ class BookSourceParser(val bookSource: BookSource) {
      */
     fun findContent(title: String = "", url: String, output: String = EMPTY, buffer: StringBuilder = StringBuilder()): String {
         if (bookSource.type == "js") {
-           return bookSource.js.chapter(cn.lightink.reader.transcode.entity.Chapter(title,url)).orEmpty()
+            // 暂时禁用 JS 书源，因为 QuickJS 库缺失
+            return ""
         } else {
             val response = BookSourceInterpreter.execute(url, bookSource.json.auth) ?: return GET_FAILED_NET_THROWABLE
             //vip章节

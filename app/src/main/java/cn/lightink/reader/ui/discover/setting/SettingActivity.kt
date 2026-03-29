@@ -9,6 +9,7 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import cn.lightink.reader.App
 import cn.lightink.reader.R
+import cn.lightink.reader.databinding.ActivitySettingBinding
 import cn.lightink.reader.ktx.parentView
 import cn.lightink.reader.ktx.startActivity
 import cn.lightink.reader.module.CHASE_UPDATE_TAG
@@ -19,41 +20,43 @@ import cn.lightink.reader.ui.base.SimpleDialog
 import cn.lightink.reader.ui.discover.AirPlayActivity
 import cn.lightink.reader.ui.discover.help.HelpActivity
 import cn.lightink.reader.ui.main.MainActivity
-import kotlinx.android.synthetic.main.activity_setting.*
 import java.util.concurrent.TimeUnit
 
 class SettingActivity : LifecycleActivity() {
 
+    private lateinit var binding: ActivitySettingBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_setting)
+        binding = ActivitySettingBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         //中等字号
-        mSettingFontSize.parentView.setOnClickListener { mSettingFontSize.toggle() }
-        mSettingFontSize.setCheckedImmediatelyNoEvent(Preferences.get(Preferences.Key.MIDDLE_FONT_SIZE, false))
-        mSettingFontSize.setOnCheckedChangeListener { _, isChecked -> changeFontSize(isChecked) }
+        binding.mSettingFontSize.parentView.setOnClickListener { binding.mSettingFontSize.toggle() }
+        binding.mSettingFontSize.setCheckedImmediatelyNoEvent(Preferences.get(Preferences.Key.MIDDLE_FONT_SIZE, false))
+        binding.mSettingFontSize.setOnCheckedChangeListener { _, isChecked -> changeFontSize(isChecked) }
         //跟随系统夜间模式
-        mSettingFollowSystem.parentView.parentView.setOnClickListener { mSettingFollowSystem.toggle() }
-        mSettingFollowSystem.setCheckedImmediatelyNoEvent(Preferences.get(Preferences.Key.FOLLOW_SYSTEM, false))
-        mSettingFollowSystem.setOnCheckedChangeListener { _, _ ->
+        binding.mSettingFollowSystem.parentView.parentView.setOnClickListener { binding.mSettingFollowSystem.toggle() }
+        binding.mSettingFollowSystem.setCheckedImmediatelyNoEvent(Preferences.get(Preferences.Key.FOLLOW_SYSTEM, false))
+        binding.mSettingFollowSystem.setOnCheckedChangeListener { _, _ ->
             Preferences.put(Preferences.Key.FOLLOW_SYSTEM, !Preferences.get(Preferences.Key.FOLLOW_SYSTEM, false))
             (application as App).setupTheme(false)
         }
         //投屏
-        mDiscoverAirPlay.setOnClickListener { startActivity(AirPlayActivity::class) }
+        binding.mDiscoverAirPlay.setOnClickListener { startActivity(AirPlayActivity::class) }
         //存储空间
-        mSettingMemory.setOnClickListener { startActivity(MemoryActivity::class) }
+        binding.mSettingMemory.setOnClickListener { startActivity(MemoryActivity::class) }
         //使用指南
-        mSettingHelp.setOnClickListener { startActivity(HelpActivity::class) }
+        binding.mSettingHelp.setOnClickListener { startActivity(HelpActivity::class) }
         //开源协议
-        mSettingOpenSource.setOnClickListener { startActivity(OpenSourceActivity::class) }
+        binding.mSettingOpenSource.setOnClickListener { startActivity(OpenSourceActivity::class) }
         //检查更新
         val indexOf = when (Preferences.get(Preferences.Key.BOOK_CHECK_UPDATE_TYPE, 60)) {
             60 -> 2
             30 -> 1
             else -> 0
         }
-        mBookCheckUpdateGroup.check(mBookCheckUpdateGroup[indexOf].id)
-        mBookCheckUpdateGroup.addOnButtonCheckedListener { group, checkedId, isChecked ->
+        binding.mBookCheckUpdateGroup.check(binding.mBookCheckUpdateGroup[indexOf].id)
+        binding.mBookCheckUpdateGroup.addOnButtonCheckedListener { group, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             val type = group.indexOfChild(group.findViewById(checkedId))
             Preferences.put(Preferences.Key.BOOK_CHECK_UPDATE_TYPE, when (type) {
@@ -63,9 +66,9 @@ class SettingActivity : LifecycleActivity() {
             })
         }
         //追更模式
-        mSettingChaseUpdate.parentView.parentView.setOnClickListener { mSettingChaseUpdate.toggle() }
-        mSettingChaseUpdate.setCheckedImmediatelyNoEvent(isChaseUpdateWorker())
-        mSettingChaseUpdate.setOnCheckedChangeListener { _, isChecked ->
+        binding.mSettingChaseUpdate.parentView.parentView.setOnClickListener { binding.mSettingChaseUpdate.toggle() }
+        binding.mSettingChaseUpdate.setCheckedImmediatelyNoEvent(isChaseUpdateWorker())
+        binding.mSettingChaseUpdate.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 //启动任务
                 startChaseUpdateWorker()
@@ -86,7 +89,7 @@ class SettingActivity : LifecycleActivity() {
                 startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 android.os.Process.killProcess(android.os.Process.myPid())
             } else {
-                mSettingFontSize.toggleNoEvent()
+                binding.mSettingFontSize.toggleNoEvent()
             }
         }.show()
     }

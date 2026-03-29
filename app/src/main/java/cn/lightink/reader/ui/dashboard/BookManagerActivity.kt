@@ -8,6 +8,8 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.MainController
+import cn.lightink.reader.databinding.ActivityBookManagerBinding
+import cn.lightink.reader.databinding.ItemBookManagerBinding
 import cn.lightink.reader.model.Bookshelf
 import cn.lightink.reader.model.StateBook
 import cn.lightink.reader.module.INTENT_BOOKSHELF
@@ -17,8 +19,6 @@ import cn.lightink.reader.module.Room
 import cn.lightink.reader.ui.base.BottomSelectorDialog
 import cn.lightink.reader.ui.base.LifecycleActivity
 import cn.lightink.reader.ui.book.BookDeleteDialog
-import kotlinx.android.synthetic.main.activity_book_manager.*
-import kotlinx.android.synthetic.main.item_book_manager.view.*
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
@@ -30,6 +30,7 @@ class BookManagerActivity : LifecycleActivity() {
     private lateinit var bookshelf: Bookshelf
     private val adapter by lazy { buildAdapter() }
     private var books = listOf<StateBook>()
+    private lateinit var binding: ActivityBookManagerBinding
 
     //封面尺寸
     private var span = 3
@@ -39,14 +40,15 @@ class BookManagerActivity : LifecycleActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_book_manager)
+        binding = ActivityBookManagerBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         bookshelf = intent.getParcelableExtra(INTENT_BOOKSHELF) ?: return
-        mBookManagerRecycler.setPadding(edge, edge, edge, edge)
-        mBookManagerRecycler.layoutManager = RVGridLayoutManager(this, span)
-        mBookManagerRecycler.adapter = adapter
-        mBookManagerMove.setOnClickListener { move() }
-        mBookManagerDelete.setOnClickListener { delete() }
-        touchHelper.attachToRecyclerView(mBookManagerRecycler)
+        binding.mBookManagerRecycler.setPadding(edge, edge, edge, edge)
+        binding.mBookManagerRecycler.layoutManager = RVGridLayoutManager(this, span)
+        binding.mBookManagerRecycler.adapter = adapter
+        binding.mBookManagerMove.setOnClickListener { move() }
+        binding.mBookManagerDelete.setOnClickListener { delete() }
+        touchHelper.attachToRecyclerView(binding.mBookManagerRecycler)
         controller.queryBooksByBookshelf(bookshelf).observe(this, Observer {
             books = it.map { book -> StateBook(book) }
             adapter.submitList(books)
@@ -59,11 +61,11 @@ class BookManagerActivity : LifecycleActivity() {
      */
     private fun checkAdapterStatus() {
         val checkedCount = books.count { it.checked }
-        mTopbar.text = if (checkedCount > 0) getString(R.string.book_select_count, checkedCount) else bookshelf.name
-        mBookManagerMove.isEnabled = checkedCount > 0 && Room.bookshelf().count() > 1
-        mBookManagerMove.alpha = if (mBookManagerMove.isEnabled) 1F else 0.2F
-        mBookManagerDelete.isEnabled = checkedCount > 0
-        mBookManagerDelete.alpha = if (mBookManagerDelete.isEnabled) 1F else 0.2F
+        binding.mTopbar.text = if (checkedCount > 0) getString(R.string.book_select_count, checkedCount) else bookshelf.name
+        binding.mBookManagerMove.isEnabled = checkedCount > 0 && Room.bookshelf().count() > 1
+        binding.mBookManagerMove.alpha = if (binding.mBookManagerMove.isEnabled) 1F else 0.2F
+        binding.mBookManagerDelete.isEnabled = checkedCount > 0
+        binding.mBookManagerDelete.alpha = if (binding.mBookManagerDelete.isEnabled) 1F else 0.2F
     }
 
     /**
@@ -100,16 +102,17 @@ class BookManagerActivity : LifecycleActivity() {
      * 构建网格数据适配器
      */
     private fun buildAdapter() = ListAdapter<StateBook>(R.layout.item_book_manager) { item, book ->
+        val itemBinding = ItemBookManagerBinding.bind(item.view)
         item.view.setPadding(edge, 0, edge, edge * 2)
-        item.view.mBookCover.layoutParams.width = size
-        item.view.mBookCover.layoutParams.height = (size * 1.4F).toInt()
-        item.view.mBookCover.privacy().stroke().hint(book.book.name).load(book.book.cover)
-        item.view.mBookOverlayView.layoutParams = item.view.mBookCover.layoutParams
-        item.view.mBookOverlayView.isVisible = book.checked
-        item.view.mBookCheckBox.isChecked = book.checked
+        itemBinding.mBookCover.layoutParams.width = size
+        itemBinding.mBookCover.layoutParams.height = (size * 1.4F).toInt()
+        itemBinding.mBookCover.privacy().stroke().hint(book.book.name).load(book.book.cover)
+        itemBinding.mBookOverlayView.layoutParams = itemBinding.mBookCover.layoutParams
+        itemBinding.mBookOverlayView.isVisible = book.checked
+        itemBinding.mBookCheckBox.isChecked = book.checked
         item.view.setOnClickListener {
             book.checked = book.checked.not()
-            mBookManagerRecycler.adapter?.notifyItemChanged(item.adapterPosition, book)
+            binding.mBookManagerRecycler.adapter?.notifyItemChanged(item.adapterPosition, book)
             checkAdapterStatus()
         }
     }

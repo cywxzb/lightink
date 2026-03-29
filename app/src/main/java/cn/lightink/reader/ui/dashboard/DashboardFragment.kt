@@ -11,6 +11,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.MainController
+import cn.lightink.reader.databinding.FragmentDashboardBinding
+import cn.lightink.reader.databinding.ItemDashboardBookBinding
+import cn.lightink.reader.databinding.ItemDashboardBookshelfBinding
 import cn.lightink.reader.ktx.dialog
 import cn.lightink.reader.ktx.setDrawableStart
 import cn.lightink.reader.ktx.toast
@@ -21,49 +24,57 @@ import cn.lightink.reader.ui.base.BottomSelectorDialog
 import cn.lightink.reader.ui.base.LifecycleFragment
 import cn.lightink.reader.ui.bookshelf.BookshelfEditActivity
 import cn.lightink.reader.ui.reader.ReaderActivity
-import kotlinx.android.synthetic.main.fragment_dashboard.view.*
-import kotlinx.android.synthetic.main.item_dashboard_book.view.*
-import kotlinx.android.synthetic.main.item_dashboard_bookshelf.view.*
 
 class DashboardFragment : LifecycleFragment() {
+
+    private var _binding: FragmentDashboardBinding? = null
+    private val binding get() = _binding!!
 
     private val controller by lazy { ViewModelProvider(requireActivity())[MainController::class.java] }
     private val adapter by lazy { buildAdapter() }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_dashboard, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentDashboardBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.mDashboardCreate.setOnClickListener { openEditActivity() }
-        view.mDashboardRecycler.layoutManager = RVLinearLayoutManager(requireContext())
-        view.mDashboardRecycler.adapter = adapter
+        binding.mDashboardCreate.setOnClickListener { openEditActivity() }
+        binding.mDashboardRecycler.layoutManager = RVLinearLayoutManager(requireContext())
+        binding.mDashboardRecycler.adapter = adapter
         controller.bookshelfLive.observe(viewLifecycleOwner, Observer { adapter.notifyDataSetChanged() })
         controller.queryBookshelves().observe(viewLifecycleOwner, Observer { adapter.submitList(it) })
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun buildAdapter() = ListAdapter<Bookshelf>(R.layout.item_dashboard_bookshelf, equalItem = { old, new -> old.id == new.id }) { item, bookshelf ->
-        item.view.mBookshelfName.text = bookshelf.name
-        item.view.mBookshelfName.setDrawableStart(if (bookshelf.id == controller.bookshelfLive.value?.id) R.drawable.ic_dashboard_bookshelf_drawer_opened else R.drawable.ic_dashboard_bookshelf_drawer)
-        item.view.mBookRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        val bindingId = item.view.mBookRecycler.tag as? Long
+        val itemBinding = ItemDashboardBookshelfBinding.bind(item.view)
+        itemBinding.mBookshelfName.text = bookshelf.name
+        itemBinding.mBookshelfName.setDrawableStart(if (bookshelf.id == controller.bookshelfLive.value?.id) R.drawable.ic_dashboard_bookshelf_drawer_opened else R.drawable.ic_dashboard_bookshelf_drawer)
+        itemBinding.mBookRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        val bindingId = itemBinding.mBookRecycler.tag as? Long
         if (bindingId != bookshelf.id) {
-            item.view.mBookRecycler.adapter = buildChildAdapter().apply {
+            itemBinding.mBookRecycler.adapter = buildChildAdapter().apply {
                 controller.queryBooksByBookshelf(bookshelf).observe(viewLifecycleOwner, Observer { books ->
-                    submitList(books.sortedByDescending { it.state }) { item.view.mBookRecycler.scrollToPosition(0) }
+                    submitList(books.sortedByDescending { it.state }) { itemBinding.mBookRecycler.scrollToPosition(0) }
                 })
             }
-            item.view.mBookRecycler.tag = bookshelf.id
+            itemBinding.mBookRecycler.tag = bookshelf.id
         }
         item.view.setOnClickListener { changedBookshelf(bookshelf) }
-        item.view.mBookshelfEdit.setOnClickListener { showActionDialog(bookshelf) }
+        itemBinding.mBookshelfEdit.setOnClickListener { showActionDialog(bookshelf) }
     }
 
     private fun buildChildAdapter() = ListAdapter<Book>(R.layout.item_dashboard_book, { old, new -> old.same(new) }, { old, new -> old.objectId == new.objectId }) { item, book ->
-        item.view.mBookCover.radius(1F).hint(book.name).load(book.cover)
-        item.view.mBookCover.setOnClickListener { v -> openBook(v, book) }
-        item.view.mBookState.isVisible = book.state == BOOK_STATE_UPDATE
+        val itemBinding = ItemDashboardBookBinding.bind(item.view)
+        itemBinding.mBookCover.radius(1F).hint(book.name).load(book.cover)
+        itemBinding.mBookCover.setOnClickListener { v -> openBook(v, book) }
+        itemBinding.mBookState.isVisible = book.state == BOOK_STATE_UPDATE
     }
 
     private fun changedBookshelf(bookshelf: Bookshelf) {

@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.util.Base64
 import android.util.Log
 import android.webkit.CookieManager
-import cn.lightink.reader.transcode.DependenciesManager
-import com.hippo.quickjs.android.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -101,113 +99,66 @@ object NetworkBridge {
     }
 
     /**
-     * jsoup请求
+     * 解析为文本
      */
-    private fun requestJsoup(
-        method: Connection.Method,
-        url: String,
-        data: String?,
-        headers: List<String>
-    ): String {
-        val connection = Jsoup.connect(url).method(method)
-        if (data?.isNotBlank() == true) {
-            connection.data(*data.split("&").toTypedArray())
+    private fun string(url: String, response: Response, unzipFilename: String?): String {
+        val body = response.body?.bytes() ?: return ""
+        //解压缩
+        val unzipBody = if (unzipFilename?.isNotBlank() == true) unzip(body, unzipFilename) else body
+        //自动识别编码
+        val charset = charset(response.header("Content-Type"), unzipBody) ?: Charset.defaultCharset()
+        //存储Cookie
+        response.headers("Set-Cookie").forEach { cookie ->
+            CookieManager.getInstance().setCookie(url, cookie)
         }
-        CookieManager.getInstance().getCookie(url)
-            ?.let { cookie -> connection.header("Cookie", cookie) }
-        if (headers.isNotEmpty()) {
-            headers.forEach { header ->
-                val indexOf = header.indexOf(":")
-                if (indexOf > -1) connection.header(
-                    header.substring(0, indexOf).trim(),
-                    header.substring(indexOf + 1).trim()
-                )
-            }
-        }
-        val response = connection.execute()
-        val markdown = StringBuilder()
-        markdown.append("```BASIC\n\nGeneral\n\n")
-        markdown.append("Request URL: ${url}\n")
-        markdown.append("Request Method: ${method.name}\n")
-        markdown.append("Status Code: ${response.statusCode()}\n```\n---\n")
-        markdown.append("```BASIC\n\nRequest Headers\n\n")
-        markdown.append("Cookie: ${CookieManager.getInstance().getCookie(url).orEmpty()}\n")
-        markdown.append("```\n")
-        Console.println(markdown.toString(), Console.Type.Headers)
-        return response.body()
+        return String(unzipBody, charset)
     }
 
     /**
-     * 响应结果转字符串
+     * 解压缩
      */
-    private fun string(url: String, response: Response, unzipFilename: String? = null): String {
-        val body = response.body?.bytes() ?: byteArrayOf()
-        var charset = body.charset() ?: charset("UTF-8")
-        if (!unzipFilename.isNullOrBlank()) {
-            val filename = url.removeSuffix("/").substringAfterLast("/")
-            val file = DependenciesManager.buildZipFile(filename)
-            file.writeBytes(body)
-            val zipFile = ZipFile(file)
-            val string = try {
-                ZipInputStream(body.inputStream(), charset).use { zip ->
-                    var entry: ZipEntry
-                    while (zip.nextEntry.also { entry = it } != null) {
-                        if (entry.name == unzipFilename) {
-                            val byteArray = zipFile.getInputStream(entry).use {
-                                it.readBytes()
-                            }
-                            charset = byteArray.charset() ?: charset("UTF-8")
-                            return@use String(byteArray, charset)
-                        }
+    private fun unzip(bytes: ByteArray, filename: String): ByteArray {
+        return try {
+            ZipInputStream(bytes.inputStream()).use { zipInput ->
+                var entry: ZipEntry?
+                while (zipInput.nextEntry.also { entry = it } != null) {
+                    if (entry?.name == filename) {
+                        return zipInput.readBytes()
                     }
-                    return@use ""
                 }
-            } catch (e: Throwable) {
-                ""
-            } finally {
-                file.delete()
             }
-            return string
+            bytes
+        } catch (e: Exception) {
+            bytes
         }
-        val string = String(body, charset)
-        return string
     }
 
     /**
-     * 打印请求
+     * 打印请求头
      */
     private fun printHeaders(response: Response) {
-        val markdown = StringBuilder()
-        markdown.append("```BASIC\n\nGeneral\n\n")
-        markdown.append("Request URL: ${response.request.url.toString()}\n")
-        markdown.append("Request Method: ${response.request.method}\n")
-        markdown.append("Status Code: ${response.code}\n```\n---\n")
-        markdown.append("```BASIC\n\nRequest Headers\n\n")
-        response.request.headers.toList().forEach { keyValue ->
-            markdown.append("${keyValue.first}: ${keyValue.second.orEmpty()}\n")
+        Log.d("NetworkBridge", "Request: ${response.request.url}")
+        Log.d("NetworkBridge", "Response: ${response.code}")
+        response.headers.forEach { (name, value) ->
+            Log.d("NetworkBridge", "$name: $value")
         }
-        markdown.append("```\n---\n")
-        markdown.append("```BASIC\n\nResponse Headers\n\n")
-        response.headers.toList().forEach { keyValue ->
-            markdown.append("${keyValue.first}: ${keyValue.second.orEmpty()}\n")
-            if (keyValue.first.uppercase(Locale.getDefault()) == "SET-COOKIE") {
-                CookieManager.getInstance().run {
-                    setCookie(response.request.url.toString(), keyValue.second)
-                    flush()
-                }
-            }
-        }
-        markdown.append("```\n")
-        Console.println(markdown.toString(), Console.Type.Headers)
     }
 
     /**
-     * 字节数组字符集
+     * 字符集识别
      */
-    fun ByteArray.charset() = UniversalDetector(null).apply {
-        handleData(this@charset, 0, this@charset.size)
-        dataEnd()
-    }.detectedCharset?.let { Charset.forName(it) }
+    private fun charset(contentType: String?, bytes: ByteArray): Charset? {
+        //从Content-Type中识别
+        contentType?.let {
+            val charset = it.replace(".*charset=".toRegex(), "")
+            if (charset != it) return Charset.forName(charset)
+        }
+        //从字节中识别
+        return UniversalDetector(null).apply {
+            handleData(bytes, 0, bytes.size)
+            dataEnd()
+        }.detectedCharset?.let { Charset.forName(it) }
+    }
 
     /**
      * 构建OkHttp客户端
@@ -216,8 +167,7 @@ object NetworkBridge {
         return buildTrustManager().let { trustManagers ->
             OkHttpClient.Builder()
                 .addNetworkInterceptor(HttpLoggingInterceptor().apply {
-                    level =
-                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+                    level = HttpLoggingInterceptor.Level.BODY
                 })
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(10, TimeUnit.SECONDS)
@@ -263,389 +213,17 @@ object NetworkBridge {
     }
 
     /**
-     * 构建JavaScript环境
+     * 构建JavaScript环境 - 暂时禁用
      */
-    fun inject(runtime: JSContext, host: String, bookSource: String) {
-        //文件名
-        val filename = "$host.js"
-        //构建依赖库
-        runtime.globalObject.setProperty("require", runtime.createJSFunction() { context, args ->
-            val dependency = args[0].cast(JSString::class.java).string
-            val code = DependenciesManager.load(dependency)
-            if (code.isNotBlank()) runtime.evaluate(code, "${dependency}.js")
-            return@createJSFunction context.createJSUndefined()
-        })
-        //构建COOKIE方法
-        runtime.globalObject.setProperty("COOKIE", runtime.createJSFunction() { context, args ->
-            val key = args[0].cast(JSString::class.java).string
-            var cookies = CookieManager.getInstance().getCookie("https://$host").orEmpty()
-            if (!cookies.contains(key)) {
-                cookies = CookieManager.getInstance().getCookie("http://$host").orEmpty()
-            }
-            val value = Regex("""(?<=$key=)(.+?)(?=;)""").find(cookies)?.value?.trim().orEmpty()
-            return@createJSFunction context.createJSString(value)
-        })
-        //构建Cookie存储功能
-        runtime.globalObject.setProperty("SET_COOKIE", runtime.createJSFunction() { context, args ->
-            val cookieManager = CookieManager.getInstance()
-            cookieManager.setAcceptCookie(true)
-            cookieManager.setCookie(".${host}", args[0].cast(JSString::class.java).string)
-            cookieManager.flush()
-            return@createJSFunction context.createJSUndefined()
-        })
-        //构建本地存错
-        runtime.globalObject.setProperty(
-            "LOCAL_STORAGE",
-            runtime.createJSFunction() { context, args ->
-                when (args[0].cast(JSNumber::class.java).int) {
-                    //getItem
-                    0 -> return@createJSFunction context.createJSString(
-                        LocalStorage.callback?.getItem(
-                            host,
-                            args[1].cast(JSString::class.java).string
-                        )
-                    )
-                    //setItem
-                    1 -> {
-                        LocalStorage.callback?.setItem(
-                            host,
-                            args[1].cast(
-                                JSString::class.java
-                            ).string,
-                            args[2].cast(
-                                JSString::class.java
-                            ).string
-                        )
-                        return@createJSFunction context.createJSUndefined()
-                    }
-                    //removeItem
-                    2 -> LocalStorage.callback?.removeItem(
-                        host,
-                        args[1].cast(
-                            JSString::class.java
-                        ).string
-                    )
-                    //clear
-                    3 -> LocalStorage.callback?.clear(host)
-                    //keys
-                    4 -> {
-                        val keys = LocalStorage.callback?.key(host).orEmpty()
-                        val array = context.createJSArray()
-                        keys.forEachIndexed { index, key ->
-                            array.setProperty(
-                                index,
-                                context.createJSString(key)
-                            )
-                        }
-                        return@createJSFunction array
-                    }
-                    //length
-                    5 -> return@createJSFunction context.createJSNumber(
-                        LocalStorage.callback?.length(host) ?: 0
-                    )
-                }
-                return@createJSFunction context.createJSUndefined()
-            })
-        runtime.evaluate(
-            "var localStorage = {\n" +
-                    "  getItem: function(key) { return LOCAL_STORAGE(0, key) },\n" +
-                    "  setItem: function(key, value) { LOCAL_STORAGE(1, key, value) },\n" +
-                    "  removeItem: function(key) { return LOCAL_STORAGE(2, key) },\n" +
-                    "  clear: function() { return LOCAL_STORAGE(3) },\n" +
-                    "  key: LOCAL_STORAGE(4),\n" +
-                    "  length: LOCAL_STORAGE(5),\n" +
-                    "}", filename
-        )
-        //构建GET/PUT/POST/DELETE/PATCH/HEAD/OPTIONS/TRACE方法
-        Connection.Method.values().forEach { method ->
-            runtime.globalObject.setProperty(
-                method.name,
-                runtime.createJSFunction() { context, args ->
-                    return@createJSFunction context.createJSString(
-                        evaluateRequest(0x01, method, args)
-                    )
-                })
-        }
-        Connection.Method.values().forEach { method ->
-            runtime.globalObject.setProperty(
-                "JSOUP_${method.name}",
-                runtime.createJSFunction() { context, args ->
-                    return@createJSFunction context.createJSString(
-                        evaluateRequest(0x02, method, args)
-                    )
-                })
-        }
-        //构建编码解码
-        runtime.globalObject.setProperty("ENCODE", runtime.createJSFunction() { context, args ->
-            if (args.size == 0) return@createJSFunction context.createJSString("")
-            val charset = if (args.size == 1) "utf8" else try {
-                args[1].cast(JSString::class.java).string
-            } catch (e: Exception) {
-                "utf8"
-            }
-            val content = args[0].cast(JSString::class.java).string
-            if (charset.lowercase(Locale.CHINESE) == "base64") {
-                return@createJSFunction context.createJSString(
-                    String(
-                        Base64.encode(
-                            content.toByteArray(),
-                            Base64.DEFAULT
-                        )
-                    )
-                )
-            }
-            if (charset.lowercase(Locale.CHINESE) == "hex") {
-                return@createJSFunction context.createJSString(
-                    content.toByteArray().joinToString("") { "%02x".format(it) }
-                )
-            }
-            return@createJSFunction context.createJSString(URLEncoder.encode(content, charset))
-        })
-        runtime.globalObject.setProperty("DECODE", runtime.createJSFunction() { context, args ->
-            if (args.size == 0) return@createJSFunction context.createJSString("")
-            val charset = if (args.size == 1) "utf8" else try {
-                args[1].cast(JSString::class.java).string
-            } catch (e: Exception) {
-                "utf8"
-            }
-            val content = args[0].cast(JSString::class.java).string
-            if (charset.lowercase(Locale.CHINESE) == "base64") {
-                return@createJSFunction context.createJSString(
-                    String(
-                        Base64.decode(
-                            content,
-                            Base64.DEFAULT
-                        )
-                    )
-                )
-            }
-            if (charset.lowercase(Locale.CHINESE) == "hex") {
-                return@createJSFunction context.createJSString(
-                    try {
-                        String(content.chunked(2).map { it.toInt(16).toByte() }.toByteArray())
-                    } catch (e: Exception) {
-                        ""
-                    }
-                )
-            }
-            return@createJSFunction context.createJSString(URLDecoder.decode(content, charset))
-        })
-        //构建SELECT方法并拓展String.select(query)
-        runtime.globalObject.setProperty("SELECT", runtime.createJSFunction() { context, args ->
-            val document = Jsoup.parse(args[0].cast(JSString::class.java).string)
-            val cssQuery = args[1].cast(JSString::class.java).string
-            val elements = document.select(cssQuery)
-            val array = context.createJSArray()
-            elements.forEachIndexed { index, element ->
-                array.setProperty(index, context.createJSString(element.toString()))
-            }
-            return@createJSFunction array
-        })
-        runtime.evaluate(
-            "let HTML = { parse: function(html){ return function(query) { return SELECT(html, query);}}}",
-            filename
-        )
-        //构建REMOVE方法并拓展String.remove(query)
-        runtime.globalObject.setProperty("REMOVE", runtime.createJSFunction() { context, args ->
-            val html = args[0].castString()
-            val document = Jsoup.parseBodyFragment(html).body().child(0)
-            try {
-                val array = args[1].cast(JSArray::class.java)
-                (0 until array.length).forEach { index ->
-                    document.select(array.getProperty(index).cast(JSString::class.java).string)
-                        .remove()
-                }
-            } catch (e: JSDataException) {
-                document.select(args[1].cast(JSString::class.java).string).remove()
-            }
-            return@createJSFunction context.createJSString(document.outerHtml())
-        })
-        runtime.evaluate(
-            "String.prototype.remove=function(key){ return REMOVE(this.valueOf(), key); }",
-            filename
-        )
-        runtime.evaluate(
-            "Array.prototype.remove=function(key){ return REMOVE(this.valueOf(), key); }",
-            filename
-        )
-        //构建TEXT方法并拓展String.attr(key)
-        runtime.globalObject.setProperty("ATTR", runtime.createJSFunction() { context, args ->
-            val html = args[0].castString()
-            val document = Jsoup.parseBodyFragment(html).body()
-            if (document.childrenSize() == 0) {
-                return@createJSFunction context.createJSString("")
-            }
-            val attributeKey = args[1].cast(JSString::class.java).string
-            val value = document.child(0).attr(attributeKey).trim()
-            return@createJSFunction context.createJSString(value)
-        })
-        runtime.evaluate(
-            "String.prototype.attr=function(key){ return ATTR(this.valueOf(), key); }",
-            filename
-        )
-        runtime.evaluate(
-            "Array.prototype.attr=function(key){ return ATTR(this.valueOf(), key); }",
-            filename
-        )
-        //构建TEXT方法并拓展String.text()
-        runtime.globalObject.setProperty("TEXT", runtime.createJSFunction() { context, args ->
-            val html = args[0].castString()
-            if (html.isBlank()) return@createJSFunction context.createJSString("")
-            val document = Jsoup.parseBodyFragment(html).body().child(0)
-            return@createJSFunction context.createJSString(document.text().trim())
-        })
-        runtime.evaluate(
-            "String.prototype.text=function(){ return TEXT(this.valueOf()); }",
-            filename
-        )
-        runtime.evaluate("Array.prototype.text=function(){ return TEXT(this); }", filename)
-        //构建XPATH方法
-        runtime.globalObject.setProperty("XPATH", runtime.createJSFunction() { context, args ->
-            if (args.size < 2) return@createJSFunction context.createJSArray()
-            val html = args[0].cast(JSString::class.java).string
-            val xpathExpression = args[1].cast(JSString::class.java).string
-            val document = Jsoup.parse(html)
-            val array = context.createJSArray()
-            try {
-                // 简化的XPath实现，支持基本的路径表达式
-                val elements = when {
-                    xpathExpression.startsWith("//") -> {
-                        val tagName = xpathExpression.removePrefix("//")
-                        if (tagName.contains("[@")) {
-                            val parts = tagName.split("[@".toRegex())
-                            val tag = parts[0]
-                            val attrPart = parts[1].removeSuffix("]")
-                            val attrName = attrPart.substringBefore("=").trim()
-                            val attrValue = attrPart.substringAfter("=\"").removeSuffix("\"").trim()
-                            document.select("$tag[$attrName=$attrValue]")
-                        } else {
-                            document.select(tagName)
-                        }
-                    }
-                    else -> document.select(xpathExpression)
-                }
-                elements.forEachIndexed { index, element ->
-                    array.setProperty(index, context.createJSString(element.outerHtml()))
-                }
-            } catch (e: Exception) {
-                Log.w("NetworkBridge", "XPATH error: $xpathExpression", e)
-            }
-            return@createJSFunction array
-        })
-        runtime.evaluate(
-            "function xpath(html, expression) { return XPATH(html, expression); }",
-            filename
-        )
-        //构建console.log打印
-        runtime.globalObject.setProperty("LOG", runtime.createJSFunction() { context, args ->
-            Console.println(args[0].cast(JSString::class.java).string)
-            return@createJSFunction context.createJSUndefined()
-        })
-        runtime.evaluate(
-            "const console = {log: function(arg) { LOG(typeof arg !== 'object' ? String(arg) : JSON.stringify(arg)) }}",
-            filename
-        )
-        //构建sleep方法
-        runtime.globalObject.setProperty("SLEEP", runtime.createJSFunction() { context, args ->
-            if (args.size == 0) return@createJSFunction context.createJSUndefined()
-            val ms = args[0].cast(JSNumber::class.java).int
-            Thread.sleep(ms.toLong())
-            return@createJSFunction context.createJSUndefined()
-        })
-        runtime.evaluate(
-            "function sleep(ms) { SLEEP(ms); }",
-            filename
-        )
-        //构建random方法
-        runtime.globalObject.setProperty("RANDOM", runtime.createJSFunction() { context, args ->
-            if (args.size < 2) return@createJSFunction context.createJSNumber(0)
-            val min = args[0].cast(JSNumber::class.java).int
-            val max = args[1].cast(JSNumber::class.java).int
-            val random = java.util.Random().nextInt(max - min + 1) + min
-            return@createJSFunction context.createJSNumber(random)
-        })
-        runtime.evaluate(
-            "function random(min, max) { return RANDOM(min, max); }",
-            filename
-        )
-        //参数提取
-        runtime.evaluate(
-            "String.prototype.query=function(variable) { let index = this.valueOf().indexOf(\"?\"); if(index > -1) { var vars = this.valueOf().substring(index + 1).split(\"&\"); for (var i=0;i<vars.length;i++) { var pair = vars[i].split(\"=\"); if(pair[0] == variable){return pair[1];} } return '';} else return '';}",
-            filename
-        )
-        //注入书源
-        try {
-            runtime.evaluate(bookSource, filename)
-            Console.println("", Console.Type.Build)
-        } catch (e: Exception) {
-            Log.e("NetworkBridge", "runtime.evaluate error, filename: $filename", e)
-            Console.println(e.message.orEmpty(), Console.Type.Build)
-        }
+    fun inject(runtime: Any, host: String, bookSource: String) {
+        Log.w("NetworkBridge", "JavaScript injection is disabled due to missing QuickJS library")
     }
 
     /**
-     * 构建通用请求
+     * 类型转换 - 暂时禁用
      */
-    private fun evaluateRequest(
-        client: Int,
-        method: Connection.Method,
-        args: Array<out JSValue>
-    ): String {
-        try {
-            if (args.isEmpty()) return ""
-            val url = args[0].cast(JSString::class.java).string
-            val config = args.getOrNull(1)?.cast(JSObject::class.java)
-            var data: String? = null
-            val headers = mutableListOf<String>()
-            try {
-                data = config?.getProperty("data")?.cast(JSString::class.java)?.string
-            } catch (e: JSDataException) {
-                //忽略数值错误
-            }
-            try {
-                val array = config?.getProperty("headers")?.cast(JSArray::class.java)
-                (0 until (array?.length ?: 0)).forEach { index ->
-                    headers.add(
-                        array?.getProperty(index)?.cast(JSString::class.java)?.string.orEmpty()
-                    )
-                }
-            } catch (e: JSDataException) {
-                Log.w("NetWorkBridge", "getProperty headers error", e)
-                //忽略数值错误
-            }
-            //zip文件提取
-            val unzipFilename = try {
-                config?.getProperty("zip")?.cast(JSString::class.java)?.string
-            } catch (e: JSDataException) {
-                null
-            }
-            val result = if (client == 0x01) {
-                request(method, url, data, headers, unzipFilename)
-            } else {
-                requestJsoup(method, url, data, headers)
-            }.trim().trim { it == '\ufeff' }
-            Console.println(result, Console.Type.Response)
-            return result
-        } catch (e: Exception) {
-            Console.println("```${e::class.java.simpleName}\n\n${e.message.orEmpty()}\n```")
-            return ""
-        }
-    }
-
-    /**
-     * 提取字符串
-     */
-    fun JSValue.castString(): String {
-        return try {
-            val array = cast(JSArray::class.java)
-            if (array.length == 0) return ""
-            array.getProperty(0).cast(JSString::class.java).string
-        } catch (e: Exception) {
-            try {
-                cast(JSString::class.java).string
-            } catch (e: Exception) {
-                ""
-            }
-        }
+    fun castString(value: Any?): String? {
+        Log.w("NetworkBridge", "castString is disabled due to missing QuickJS library")
+        return null
     }
 }
