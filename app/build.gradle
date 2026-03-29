@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
-apply plugin: 'com.yanzhenjie.andserver'
+apply plugin: 'com.google.devtools.ksp'
 apply plugin: 'kotlinx-serialization'
 apply plugin: 'kotlin-parcelize'
 // 应用代码质量配置
@@ -11,7 +11,6 @@ apply from: '../code-quality.gradle'
 android {
     namespace 'cn.lightink.reader'
     compileSdkVersion 34
-    buildToolsVersion "34.0.0"
     defaultConfig {
         applicationId 'cn.lightink.reader'
         minSdkVersion 24
@@ -29,6 +28,18 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    // 16KB 页大小支持
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging false
+        }
+    }
+
+    // 启用 16KB 页大小支持
+    androidResources {
+        generateLocaleConfig true
     }
 
     lint {
@@ -50,6 +61,13 @@ android {
     }
 }
 
+configurations.all {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-android-extensions-runtime'
+    exclude group: 'com.android.support', module: 'versionedparcelable'
+    exclude group: 'com.android.support', module: 'support-compat'
+    exclude group: 'com.android.support', module: 'appcompat-v7'
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -67,15 +85,22 @@ dependencies {
     implementation 'androidx.room:room-ktx:2.6.1'
     implementation 'androidx.room:room-runtime:2.6.1'
     implementation 'androidx.work:work-runtime-ktx:2.9.0'
-    implementation 'com.github.bumptech.glide:glide:4.16.0'
-    implementation 'com.github.bumptech.glide:okhttp3-integration:4.16.0'
+    // Coil 图片加载库 (替代 Glide)
+    implementation 'io.coil-kt:coil:2.5.0'
+    implementation 'io.coil-kt:coil-svg:2.5.0'
+    implementation 'io.coil-kt:coil-gif:2.5.0'
     implementation 'com.github.promeg:tinypinyin:3.0.0'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.googlecode.juniversalchardet:juniversalchardet:1.0.3'
     implementation 'com.jayway.jsonpath:json-path:2.9.0'
     implementation 'com.scottyab:secure-preferences-lib:0.1.4'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.yanzhenjie.andserver:api:2.1.10'
+    // Ktor Server dependencies
+    implementation 'io.ktor:ktor-server-core:2.3.0'
+    implementation 'io.ktor:ktor-server-netty:2.3.0'
+    implementation 'io.ktor:ktor-server-content-negotiation:2.3.0'
+    implementation 'io.ktor:ktor-serialization-kotlinx-json:2.3.0'
+    implementation 'io.ktor:ktor-server-cors:2.3.0'
     implementation 'id.zelory:compressor:3.0.1'
     implementation 'org.greenrobot:eventbus:3.3.1'
     implementation 'org.jsoup:jsoup:1.17.2'
@@ -106,14 +131,12 @@ dependencies {
     //test
     testImplementation 'junit:junit:4.12'
 
-    kapt 'androidx.lifecycle:lifecycle-common-java8:2.7.0'
-    kapt 'androidx.room:room-compiler:2.6.1'
-    kapt 'com.github.bumptech.glide:compiler:4.16.0'
-    kapt 'com.yanzhenjie.andserver:processor:2.1.10'
+    ksp 'androidx.room:room-compiler:2.6.1'
+    ksp 'androidx.lifecycle:lifecycle-compiler:2.7.0'
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-    // implementation("com.github.chimisgo:quickjs-android:1.0")
-    // QuickJS 库暂时禁用，因为找不到合适的替代库
+    // QuickJS Android 库 - 用于 JS 书源支持
+    implementation("com.github.seven332:quickjs-android:c27377f")
 
     // 测试依赖
     testImplementation 'junit:junit:4.13.2'

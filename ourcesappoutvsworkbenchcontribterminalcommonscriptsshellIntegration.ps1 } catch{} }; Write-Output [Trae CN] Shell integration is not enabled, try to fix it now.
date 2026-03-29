@@ -1,0 +1,400 @@
+[1mdiff --git a/app/build.gradle b/app/build.gradle[m
+[1mindex cb07c78..f48e594 100644[m
+[1m--- a/app/build.gradle[m
+[1m+++ b/app/build.gradle[m
+[36m@@ -1,7 +1,7 @@[m
+ apply plugin: 'com.android.application'[m
+ apply plugin: 'kotlin-android'[m
+ apply plugin: 'kotlin-kapt'[m
+[31m-apply plugin: 'com.yanzhenjie.andserver'[m
+[32m+[m[32mapply plugin: 'com.google.devtools.ksp'[m
+ apply plugin: 'kotlinx-serialization'[m
+ apply plugin: 'kotlin-parcelize'[m
+ // 应用代码质量配置[m
+[36m@@ -11,7 +11,6 @@[m [mapply from: '../code-quality.gradle'[m
+ android {[m
+     namespace 'cn.lightink.reader'[m
+     compileSdkVersion 34[m
+[31m-    buildToolsVersion "34.0.0"[m
+     defaultConfig {[m
+         applicationId 'cn.lightink.reader'[m
+         minSdkVersion 24[m
+[36m@@ -31,6 +30,18 @@[m [mandroid {[m
+         }[m
+     }[m
+ [m
+[32m+[m[32m    // 16KB 页大小支持[m
+[32m+[m[32m    packagingOptions {[m
+[32m+[m[32m        jniLibs {[m
+[32m+[m[32m            useLegacyPackaging false[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // 启用 16KB 页大小支持[m
+[32m+[m[32m    androidResources {[m
+[32m+[m[32m        generateLocaleConfig true[m
+[32m+[m[32m    }[m
+[32m+[m
+     lint {[m
+         checkReleaseBuilds false[m
+         abortOnError false[m
+[36m@@ -50,6 +61,13 @@[m [mandroid {[m
+     }[m
+ }[m
+ [m
+[32m+[m[32mconfigurations.all {[m
+[32m+[m[32m    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-android-extensions-runtime'[m
+[32m+[m[32m    exclude group: 'com.android.support', module: 'versionedparcelable'[m
+[32m+[m[32m    exclude group: 'com.android.support', module: 'support-compat'[m
+[32m+[m[32m    exclude group: 'com.android.support', module: 'appcompat-v7'[m
+[32m+[m[32m}[m
+[32m+[m
+ dependencies {[m
+     implementation fileTree(include: ['*.jar'], dir: 'libs')[m
+     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"[m
+[36m@@ -67,15 +85,22 @@[m [mdependencies {[m
+     implementation 'androidx.room:room-ktx:2.6.1'[m
+     implementation 'androidx.room:room-runtime:2.6.1'[m
+     implementation 'androidx.work:work-runtime-ktx:2.9.0'[m
+[31m-    implementation 'com.github.bumptech.glide:glide:4.16.0'[m
+[31m-    implementation 'com.github.bumptech.glide:okhttp3-integration:4.16.0'[m
+[32m+[m[32m    // Coil 图片加载库 (替代 Glide)[m
+[32m+[m[32m    implementation 'io.coil-kt:coil:2.5.0'[m
+[32m+[m[32m    implementation 'io.coil-kt:coil-svg:2.5.0'[m
+[32m+[m[32m    implementation 'io.coil-kt:coil-gif:2.5.0'[m
+     implementation 'com.github.promeg:tinypinyin:3.0.0'[m
+     implementation 'com.google.code.gson:gson:2.10.1'[m
+     implementation 'com.googlecode.juniversalchardet:juniversalchardet:1.0.3'[m
+     implementation 'com.jayway.jsonpath:json-path:2.9.0'[m
+     implementation 'com.scottyab:secure-preferences-lib:0.1.4'[m
+     implementation 'com.squareup.okhttp3:okhttp:4.12.0'[m
+[31m-    implementation 'com.yanzhenjie.andserver:api:2.1.10'[m
+[32m+[m[32m    // Ktor Server dependencies[m
+[32m+[m[32m    implementation 'io.ktor:ktor-server-core:2.3.0'[m
+[32m+[m[32m    implementation 'io.ktor:ktor-server-netty:2.3.0'[m
+[32m+[m[32m    implementation 'io.ktor:ktor-server-content-negotiation:2.3.0'[m
+[32m+[m[32m    implementation 'io.ktor:ktor-serialization-kotlinx-json:2.3.0'[m
+[32m+[m[32m    implementation 'io.ktor:ktor-server-cors:2.3.0'[m
+     implementation 'id.zelory:compressor:3.0.1'[m
+     implementation 'org.greenrobot:eventbus:3.3.1'[m
+     implementation 'org.jsoup:jsoup:1.17.2'[m
+[36m@@ -106,14 +131,12 @@[m [mdependencies {[m
+     //test[m
+     testImplementation 'junit:junit:4.12'[m
+ [m
+[31m-    kapt 'androidx.lifecycle:lifecycle-common-java8:2.7.0'[m
+[31m-    kapt 'androidx.room:room-compiler:2.6.1'[m
+[31m-    kapt 'com.github.bumptech.glide:compiler:4.16.0'[m
+[31m-    kapt 'com.yanzhenjie.andserver:processor:2.1.10'[m
+[32m+[m[32m    ksp 'androidx.room:room-compiler:2.6.1'[m
+[32m+[m[32m    ksp 'androidx.lifecycle:lifecycle-compiler:2.7.0'[m
+ [m
+     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")[m
+[31m-    // implementation("com.github.chimisgo:quickjs-android:1.0")[m
+[31m-    // QuickJS 库暂时禁用，因为找不到合适的替代库[m
+[32m+[m[32m    // QuickJS Android 库 - 用于 JS 书源支持[m
+[32m+[m[32m    implementation("com.github.seven332:quickjs-android:c27377f")[m
+ [m
+     // 测试依赖[m
+     testImplementation 'junit:junit:4.13.2'[m
+[1mdiff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml[m
+[1mindex 1d974f6..83f3d6d 100644[m
+[1m--- a/app/src/main/AndroidManifest.xml[m
+[1m+++ b/app/src/main/AndroidManifest.xml[m
+[36m@@ -9,14 +9,15 @@[m
+     <application[m
+         android:name="cn.lightink.reader.App"[m
+         android:allowBackup="false"[m
+[31m-        android:extractNativeLibs="false"[m
+         android:icon="@mipmap/ic_launcher"[m
+         android:label="@string/app_name"[m
+         android:supportsRtl="true"[m
+         android:theme="@style/AppTheme"[m
+         android:usesCleartextTraffic="true"[m
+[32m+[m[32m        android:appComponentFactory="androidx.core.app.CoreComponentFactory"[m
+         tools:ignore="GoogleAppIndexingWarning"[m
+[31m-        tools:targetApi="n">[m
+[32m+[m[32m        tools:targetApi="n"[m
+[32m+[m[32m        tools:replace="android:appComponentFactory">[m
+ [m
+         <activity[m
+             android:name="cn.lightink.reader.ui.main.MainActivity"[m
+[1mdiff --git a/app/src/main/java/cn/lightink/reader/model/BookModel.kt b/app/src/main/java/cn/lightink/reader/model/BookModel.kt[m
+[1mindex ce8cb84..c3b5002 100644[m
+[1m--- a/app/src/main/java/cn/lightink/reader/model/BookModel.kt[m
+[1m+++ b/app/src/main/java/cn/lightink/reader/model/BookModel.kt[m
+[36m@@ -13,8 +13,8 @@[m [mimport cn.lightink.reader.module.booksource.BookSourceJson[m
+ import cn.lightink.reader.module.booksource.BookSourceParser[m
+ import com.google.gson.Gson[m
+ import com.google.gson.annotations.SerializedName[m
+[31m-import kotlinx.android.parcel.IgnoredOnParcel[m
+[31m-import kotlinx.android.parcel.Parcelize[m
+[32m+[m[32mimport kotlinx.parcelize.IgnoredOnParcel[m
+[32m+[m[32mimport kotlinx.parcelize.Parcelize[m
+ import java.io.File[m
+ [m
+ /********************************************************************************************************************************[m
+[1mdiff --git a/app/src/main/java/cn/lightink/reader/model/BookRankModel.kt b/app/src/main/java/cn/lightink/reader/model/BookRankModel.kt[m
+[1mindex 36e946d..cb6c113 100644[m
+[1m--- a/app/src/main/java/cn/lightink/reader/model/BookRankModel.kt[m
+[1m+++ b/app/src/main/java/cn/lightink/reader/model/BookRankModel.kt[m
+[36m@@ -3,7 +3,7 @@[m [mpackage cn.lightink.reader.model[m
+ import android.os.Parcelable[m
+ import androidx.room.*[m
+ import cn.lightink.reader.module.EMPTY[m
+[31m-import kotlinx.android.parcel.Parcelize[m
+[32m+[m[32mimport kotlinx.parcelize.Parcelize[m
+ [m
+ /********************************************************************************************************************************[m
+  * 存储类 排行榜[m
+[1mdiff --git a/app/src/main/java/cn/lightink/reader/model/BookSourceModel.kt b/app/src/main/java/cn/lightink/reader/model/BookSourceModel.kt[m
+[1mindex bd3206d..b7d09a2 100644[m
+[1m--- a/app/src/main/java/cn/lightink/reader/model/BookSourceModel.kt[m
+[1m+++ b/app/src/main/java/cn/lightink/reader/model/BookSourceModel.kt[m
+[36m@@ -2,7 +2,7 @@[m [mpackage cn.lightink.reader.model[m
+ [m
+ import androidx.paging.DataSource[m
+ import androidx.room.*[m
+[31m-// import cn.lightink.reader.transcode.JavaScriptTranscoder[m
+[32m+[m[32mimport cn.lightink.reader.transcode.JavaScriptTranscoder[m
+ import cn.lightink.reader.module.booksource.BookSourceJson[m
+ import com.google.gson.Gson[m
+ [m
+[36m@@ -28,9 +28,8 @@[m [mdata class BookSource(val id: Int, var name: String, @PrimaryKey val url: String[m
+     val json: BookSourceJson[m
+         get() = Gson().fromJson(content, BookSourceJson::class.java)!![m
+ [m
+[31m-    // 暂时禁用 JS 书源，因为 QuickJS 库缺失[m
+[31m-    // val js: JavaScriptTranscoder[m
+[31m-    //     get() = JavaScriptTranscoder(url, content)[m
+[32m+[m[32m    val js: JavaScriptTranscoder[m
+[32m+[m[32m        get() = JavaScriptTranscoder(url, content)[m
+ [m
+     val author: String[m
+         get() = "${if (-1 > -1) owner else "privacy"}\u2000-\u2000$url\u2000-\u2000$type" //todo[m
+[1mdiff --git a/app/src/main/java/cn/lightink/reader/model/FeedModel.kt b/app/src/main/java/cn/lightink/reader/model/FeedModel.kt[m
+[1mindex a1858f3..ab4e09b 100644[m
+[1m--- a/app/src/main/java/cn/lightink/reader/model/FeedModel.kt[m
+[1m+++ b/app/src/main/java/cn/lightink/reader/model/FeedModel.kt[m
+[36m@@ -5,7 +5,7 @@[m [mimport androidx.lifecycle.LiveData[m
+ import androidx.room.*[m
+ import cn.lightink.reader.module.Room[m
+ import com.google.gson.annotations.SerializedName[m
+[31m-import kotlinx.android.parcel.Parcelize[m
+[32m+[m[32mimport kotlinx.parcelize.Parcelize[m
+ [m
+ /**[m
+  * 订阅分组[m
+[1mdiff --git a/app/src/main/java/cn/lightink/reader/model/ThirdAccount.kt b/app/src/main/java/cn/lightink/reader/model/ThirdAccount.kt[m
+[1mindex b6a5b1a..6279eee 100644[m
+[1m--- a/app/src/main/java/cn/lightink/reader/model/ThirdAccount.kt[m
+[1m+++ b/app/src/main/java/cn/lightink/reader/model/ThirdAccount.kt[m
+[36m@@ -5,7 +5,7 @@[m [mimport androidx.lifecycle.LiveData[m
+ import androidx.recyclerview.widget.DiffUtil[m
+ import androidx.room.*[m
+ import cn.lightink.reader.ktx.fromJson[m
+[31m-import kotlinx.android.parcel.Parcelize[m
+[32m+[m[32mimport kotlinx.parcelize.Parcelize[m
+ [m
+ @Entity([m
+     tableName = "third",[m
+[1mdiff --git a/app/src/main/java/cn/lightink/reader/module/booksource/BookSourceParser.kt b/app/src/main/java/cn/lightink/reader/module/booksource/BookSourceParser.kt[m
+[1mindex 4fb0ecf..78ab765 100644[m
+[1m--- a/app/src/main/java/cn/lightink/reader/module/booksource/BookSourceParser.kt[m
+[1m+++ b/app/src/main/java/cn/lightink/reader/module/booksource/BookSourceParser.kt[m
+[36m@@ -80,8 +80,9 @@[m [mclass BookSourceParser(val bookSource: BookSource) {[m
+         getCache<List<SearchMetadata>>(cacheKey)?.let { return it }[m
+         [m
+         val result = if (bookSource.type == "js") {[m
+[31m-            // 暂时禁用 JS 书源，因为 QuickJS 库缺失[m
+[31m-            emptyList()[m
+[32m+[m[32m            bookSource.js.search(key)?.map { t ->[m
+[32m+[m[32m                SearchMetadata(t.name, t.author, t.cover, "", t.detail)[m
+[32m+[m[32m            }.orEmpty()[m
+         } else {[m
+             performSearch(key)[m
+         }[m
+[36m@@ -115,8 +116,12 @@[m [mclass BookSourceParser(val bookSource: BookSource) {[m
+         getCache<DetailMetadata>(cacheKey)?.let { return it }[m
+         [m
+         val result = if (bookSource.type == "js") {[m
+[31m-            // 暂时禁用 JS 书源，因为 QuickJS 库缺失[m
+[31m-            null[m
+[32m+[m[32m            val r = bookSource.js.detail(metadata.detail)[m
+[32m+[m[32m            if (r != null) {[m
+[32m+[m[32m                DetailMetadata(metadata.name, metadata.author, metadata.cover, r.summary, r.status, r.update, r.lastChapter, metadata.detail, r.catalog)[m
+[32m+[m[32m            } else {[m
+[32m+[m[32m                null[m
+[32m+[m[32m            }[m
+         } else {[m
+             val response = BookSourceInterpreter.execute(metadata.detail, bookSource.json.auth) ?: return null[m
+             val detail = findDetailMetadata(metadata.detail, response)[m
+[36m@@ -145,8 +150,7 @@[m [mclass BookSourceParser(val bookSource: BookSource) {[m
+         }[m
+         [m
+         val result = if (bookSource.type == "js") {[m
+[31m-            // 暂时禁用 JS 书源，因为 QuickJS 库缺失[m
+[31m-            emptyList<Chapter>()[m
+[32m+[m[32m            bookSource.js.catalog(metadata.catalog.toString())?.map { Chapter(it.name, it.url, it.vip) }.orEmpty()[m
+         } else {[m
+             val response = if (metadata.catalog is BookSourceResponse) metadata.catalog as BookSourceResponse else {[m
+                 urls.add(metadata.catalog as String)[m
+[36m@@ -234,8 +238,12 @@[m [mclass BookSourceParser(val bookSource: BookSource) {[m
+      */[m
+     fun findContent(title: String = "", url: String, output: String = EMPTY, buffer: StringBuilder = StringBuilder()): String {[m
+         if (bookSource.type == "js") {[m
+[31m-            // 暂时禁用 JS 书源，因为 QuickJS 库缺失[m
+[31m-            return ""[m
+[32m+[m[32m            try {[m
+[32m+[m[32m                return bookSource.js.chapter(cn.lightink.reader.transcode.entity.Chapter(title,url)).orEmpty()[m
+[32m+[m[32m            } catch (e: Exception) {[m
+[32m+[m[32m                Log.w("BookSourceParser", "findContent error, title: $title, url: $url, bookSource: ${bookSource.url}", e)[m
+[32m+[m[32m                return ""[m
+[32m+[m[32m            }[m
+         } else {[m
+             val response = BookSourceInterpreter.execute(url, bookSource.json.auth) ?: return GET_FAILED_NET_THROWABLE[m
+             //vip章节[m
+[1mdiff --git a/app/src/main/java/cn/lightink/reader/transcode/JavaScriptTranscoder.kt b/app/src/main/java/cn/lightink/reader/transcode/JavaScriptTranscoder.kt[m
+[1mindex 4c07e20..f3e2bba 100644[m
+[1m--- a/app/src/main/java/cn/lightink/reader/transcode/JavaScriptTranscoder.kt[m
+[1m+++ b/app/src/main/java/cn/lightink/reader/transcode/JavaScriptTranscoder.kt[m
+[36m@@ -1,85 +1,175 @@[m
+ package cn.lightink.reader.transcode[m
+ [m
+ import android.util.Log[m
+[32m+[m[32mimport cn.lightink.reader.transcode.NetworkBridge.castString[m
+ import cn.lightink.reader.transcode.entity.*[m
+[32m+[m[32mimport cn.lightink.reader.transcode.ktx.decodeJson[m
+[32m+[m[32mimport com.github.seven332.quickjs.android.*[m
+ import java.io.File[m
+ [m
+ /**[m
+[31m- * 转码器 - 暂时禁用，因为 QuickJS 库缺失[m
+[32m+[m[32m * 转码器[m
+  * @property host 书源地址[m
+  * @property bookSource 书源内容[m
+  */[m
+ class JavaScriptTranscoder(private val host: String, private val bookSource: String) {[m
+ [m
+[32m+[m[32m    private val filename = "run.js"[m
+[32m+[m[32m    private val quickJS = QuickJS.Builder().build()[m
+[32m+[m
+     /**[m
+      * 书源信息[m
+      */[m
+     fun bookSource(): BookSourceInfo? {[m
+[31m-        Log.w("JavaScriptTranscoder", "JS transcoder is disabled due to missing QuickJS library")[m
+[31m-        return null[m
+[32m+[m[32m        return javaScript { context ->[m
+[32m+[m[32m            try {[m
+[32m+[m[32m                val json = context.getGlobalObject().getProperty("bookSource").cast(JSString::class.java).string[m
+[32m+[m[32m                return@javaScript json.decodeJson<BookSourceInfo>()[m
+[32m+[m[32m            } catch (e: Exception) {[m
+[32m+[m[32m                Log.e("JavaScriptTranscoder", "", e)[m
+[32m+[m[32m                null[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     /**[m
+      * 搜索[m
+      */[m
+     fun search(key: String): List<SearchResult>? {[m
+[31m-        Log.w("JavaScriptTranscoder", "JS transcoder is disabled due to missing QuickJS library")[m
+[31m-        return null[m
+[32m+[m[32m        return javaScript { context ->[m
+[32m+[m[32m            try {[m
+[32m+[m[32m                val response = context.evaluate("search('$key');", filename, String::class.java)[m
+[32m+[m[32m                val results = response.decodeJson<List<SearchResult>>()[m
+[32m+[m[32m                return@javaScript results.filter {[m
+[32m+[m[32m                    it.author.isNotBlank() && (it.name.contains(key) || it.author.contains(key))[m
+[32m+[m[32m                }[m
+[32m+[m[32m            } catch (e: Exception) {[m
+[32m+[m[32m                Log.w("JavaScriptTranscoder", "search error, key: $key, bookSource: $host", e)[m
+[32m+[m[32m                return@javaScript null[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     /**[m
+      * 详情[m
+      */[m
+     fun detail(url: String): BookDetail? {[m
+[31m-        Log.w("JavaScriptTranscoder", "JS transcoder is disabled due to missing QuickJS library")[m
+[31m-        return null[m
+[32m+[m[32m        return javaScript { context ->[m
+[32m+[m[32m            try {[m
+[32m+[m[32m                val response = context.evaluate("detail('$url');", filename, String::class.java)[m
+[32m+[m[32m                return@javaScript response.decodeJson<BookDetail>()[m
+[32m+[m[32m            } catch (e: Exception) {[m
+[32m+[m[32m                Log.w("JavaScriptTranscoder", "detail error, url: $url, bookSource: $host", e)[m
+[32m+[m[32m                return@javaScript null[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     /**[m
+      * 目录[m
+      */[m
+     fun catalog(url: String): List<Chapter>? {[m
+[31m-        Log.w("JavaScriptTranscoder", "JS transcoder is disabled due to missing QuickJS library")[m
+[31m-        return null[m
+[32m+[m[32m        return javaScript { context ->[m
+[32m+[m[32m            try {[m
+[32m+[m[32m                val response = context.evaluate("catalog('$url');", filename, String::class.java)[m
+[32m+[m[32m                return@javaScript response.decodeJson<List<Chapter>>()[m
+[32m+[m[32m            } catch (e: Exception) {[m
+[32m+[m[32m                Log.w("JavaScriptTranscoder", "catalog error, url: $url, bookSource: $host", e)[m
+[32m+[m[32m                return@javaScript null[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     /**[m
+      * 章节[m
+      */[m
+     fun chapter(chapter: Chapter, output: File? = null): String {[m
+[31m-        Log.w("JavaScriptTranscoder", "JS transcoder is disabled due to missing QuickJS library")[m
+[31m-        return ""[m
+[32m+[m[32m        return javaScript { context ->[m
+[32m+[m[32m            try {[m
+[32m+[m[32m                if (chapter.url.isBlank()) return@javaScript ""[m
+[32m+[m[32m                val response = context.evaluate("chapter('${chapter.url}');", filename, JSValue::class.java)[m
+[32m+[m[32m                    .castString()[m
+[32m+[m[32m                val markdown = ContentParser.read(chapter.url, response, output)[m
+[32m+[m[32m                if (markdown.isNotBlank()) markdown else ""[m
+[32m+[m[32m            } catch (e: Exception) {[m
+[32m+[m[32m                Log.w("JavaScriptTranscoder", "chapter content error, chapter: $chapter, bookSource: $host", e)[m
+[32m+[m[32m                return@javaScript e.message ?: ""[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     /**[m
+      * 登录[m
+      */[m
+     fun login(args: Array<String>): String {[m
+[31m-        Log.w("JavaScriptTranscoder", "JS transcoder is disabled due to missing QuickJS library")[m
+[31m-        return ""[m
+[32m+[m[32m        return javaScript { context ->[m
+[32m+[m[32m            val array = StringBuilder()[m
+[32m+[m[32m            args.forEachIndexed { index, arg ->[m
+[32m+[m[32m                if (index > 0) array.append(",")[m
+[32m+[m[32m                array.append("'$arg'")[m
+[32m+[m[32m            }[m
+[32m+[m[32m            try {[m
+[32m+[m[32m                context.evaluate("login(${array});", filename, String::class.java)[m
+[32m+[m[32m            } catch (e: Exception) {[m
+[32m+[m[32m                Log.w("JavaScriptTranscoder", "login error, args: ${args.contentToString()}, bookSource: $host", e)[m
+[32m+[m[32m                return@javaScript ""[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     /**[m
+      * 检查登录[m
+      */[m
+     fun checkLogin(): Boolean {[m
+[31m-        Log.w("JavaScriptTranscoder", "JS transcoder is disabled due to missing QuickJS library")[m
+[31m-        return false[m
+[32m+[m[32m        return javaScript { context ->

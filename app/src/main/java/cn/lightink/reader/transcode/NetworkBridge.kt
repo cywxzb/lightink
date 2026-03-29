@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.util.Base64
 import android.util.Log
 import android.webkit.CookieManager
+import cn.lightink.reader.transcode.ktx.encodeJson
+import com.github.seven332.quickjs.android.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -213,17 +215,63 @@ object NetworkBridge {
     }
 
     /**
-     * 构建JavaScript环境 - 暂时禁用
+     * 构建JavaScript环境
      */
-    fun inject(runtime: Any, host: String, bookSource: String) {
-        Log.w("NetworkBridge", "JavaScript injection is disabled due to missing QuickJS library")
+    fun inject(context: JSContext, host: String, bookSource: String) {
+        // 注入网络请求函数
+        val requestFunction = context.createJSFunction { _, args ->
+            val method = args[0].cast(JSString::class.java).string
+            val url = args[1].cast(JSString::class.java).string
+            val data = if (args.size > 2) args[2].cast(JSString::class.java).string else null
+            val headers = if (args.size > 3) {
+                args[3].cast(JSArray::class.java).map { it.cast(JSString::class.java).string }
+            } else emptyList()
+            val unzipFilename = if (args.size > 4) args[4].cast(JSString::class.java).string else null
+            
+            val result = request(
+                Connection.Method.valueOf(method.uppercase()),
+                url,
+                data,
+                headers,
+                unzipFilename
+            )
+            context.createJSString(result)
+        }
+        context.getGlobalObject().setProperty("request", requestFunction)
+
+        // 注入GET请求函数
+        val getFunction = context.createJSFunction { _, args ->
+            val url = args[0].cast(JSString::class.java).string
+            val bytes = get(url)
+            if (bytes != null) {
+                context.createJSString(Base64.encodeToString(bytes, Base64.DEFAULT))
+            } else {
+                context.createJSNull()
+            }
+        }
+        context.getGlobalObject().setProperty("get", getFunction)
+
+        // 注入URL编码/解码函数
+        val encodeFunction = context.createJSFunction { _, args ->
+            val text = args[0].cast(JSString::class.java).string
+            context.createJSString(URLEncoder.encode(text, "UTF-8"))
+        }
+        context.getGlobalObject().setProperty("encode", encodeFunction)
+
+        val decodeFunction = context.createJSFunction { _, args ->
+            val text = args[0].cast(JSString::class.java).string
+            context.createJSString(URLDecoder.decode(text, "UTF-8"))
+        }
+        context.getGlobalObject().setProperty("decode", decodeFunction)
+
+        // 注入书源内容
+        context.evaluate(bookSource, "bookSource.js")
     }
 
     /**
-     * 类型转换 - 暂时禁用
+     * 类型转换
      */
-    fun castString(value: Any?): String? {
-        Log.w("NetworkBridge", "castString is disabled due to missing QuickJS library")
-        return null
+    fun castString(value: JSValue?): String? {
+        return value?.cast(JSString::class.java)?.string
     }
 }

@@ -1,0 +1,66 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "构建项目",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "assembleDebug",
+        "--no-build-cache"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gradle"]
+    },
+    {
+      "label": "清理项目",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "clean"
+      ],
+      "problemMatcher": ["$gradle"]
+    },
+    {
+      "label": "安装应用到设备",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "installDebug"
+      ],
+      "problemMatcher": ["$gradle"]
+    },
+    {
+      "label": "构建并安装",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "assembleDebug",
+        "installDebug",
+        "--no-build-cache"
+      ],
+      "problemMatcher": ["$gradle"]
+    },
+    {
+      "label": "运行单元测试",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "testDebugUnitTest"
+      ],
+      "problemMatcher": ["$gradle"]
+    },
+    {
+      "label": "检查依赖",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "dependencies"
+      ],
+      "problemMatcher": ["$gradle"]
+    }
+  ]
+}

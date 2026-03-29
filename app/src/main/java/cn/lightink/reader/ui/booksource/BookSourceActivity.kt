@@ -11,6 +11,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.BookSourceController
+import cn.lightink.reader.databinding.ActivityBookSourceBinding
+import cn.lightink.reader.databinding.ItemBooksourceBinding
 import cn.lightink.reader.ktx.startActivity
 import cn.lightink.reader.model.BookSource
 import cn.lightink.reader.module.INTENT_BOOK_SOURCE
@@ -20,23 +22,23 @@ import cn.lightink.reader.ui.base.BottomSelectorDialog
 import cn.lightink.reader.ui.base.LifecycleActivity
 import cn.lightink.reader.ui.base.PopupMenu
 import cn.lightink.reader.widget.VerticalDividerItemDecoration
-import kotlinx.android.synthetic.main.activity_book_source.*
-import kotlinx.android.synthetic.main.item_booksource.view.*
 
 class BookSourceActivity : LifecycleActivity() {
 
+    private lateinit var binding: ActivityBookSourceBinding
     private val controller by lazy { ViewModelProvider(this).get(BookSourceController::class.java) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_book_source)
-        mTopbar.setOnMenuClickListener { showPopup() }
-        mBookSourceRecycler.addItemDecoration(VerticalDividerItemDecoration(this, R.dimen.margin_horizontal))
-        mBookSourceRecycler.layoutManager = RVLinearLayoutManager(this)
-        mBookSourceRecycler.adapter = this@BookSourceActivity.adapter
+        binding = ActivityBookSourceBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.mTopbar.setOnMenuClickListener { showPopup() }
+        binding.mBookSourceRecycler.addItemDecoration(VerticalDividerItemDecoration(this, R.dimen.margin_horizontal))
+        binding.mBookSourceRecycler.layoutManager = RVLinearLayoutManager(this)
+        binding.mBookSourceRecycler.adapter = this@BookSourceActivity.adapter
         controller.bookSources.observe(this, Observer { list ->
-            mTopbar.setProgressVisible(false)
-            mBookSourceNone.isVisible = list.isEmpty()
+            binding.mTopbar.setProgressVisible(false)
+            binding.mBookSourceNone.isVisible = list.isEmpty()
             adapter.submitList(list)
         })
     }
@@ -46,7 +48,7 @@ class BookSourceActivity : LifecycleActivity() {
             when (item) {
                 R.string.booksource_import -> startActivity(BookSourceVerifyActivity::class)
             }
-        }.show(mTopbar)
+        }.show(binding.mTopbar)
     }
 
     /**
@@ -68,22 +70,23 @@ class BookSourceActivity : LifecycleActivity() {
      */
     private val adapter = PageListAdapter<BookSource>(R.layout.item_booksource, equalItem = { old, new -> old.url == new.url }) { item, bookSource ->
         if (bookSource == null) return@PageListAdapter
-        item.view.mBookSourceAuth.isVisible = false
-        item.view.mBookSourceRank.isVisible = bookSource.rank
-        item.view.mBookSourceName.text = bookSource.name
-        item.view.mBookSourceOwner.text = bookSource.author
+        val itemBinding = ItemBooksourceBinding.bind(item.view)
+        itemBinding.mBookSourceAuth.isVisible = false
+        itemBinding.mBookSourceRank.isVisible = bookSource.rank
+        itemBinding.mBookSourceName.text = bookSource.name
+        itemBinding.mBookSourceOwner.text = bookSource.author
         if (bookSource.account) {
             controller.verify(bookSource).observe(this, Observer { verify ->
-                item.view.mBookSourceAuth.isVisible = true
-                item.view.mBookSourceAuth.setText(if (verify) R.string.booksource_auth_success else R.string.booksource_auth_failure)
-                item.view.mBookSourceAuth.setTextColor(getColor(if (verify) R.color.colorAccent else R.color.colorGrapefruit))
-                item.view.mBookSourceAuth.backgroundTintList = ColorStateList.valueOf(getColor(if (verify) R.color.colorAccent else R.color.colorGrapefruit))
+                itemBinding.mBookSourceAuth.isVisible = true
+                itemBinding.mBookSourceAuth.setText(if (verify) R.string.booksource_auth_success else R.string.booksource_auth_failure)
+                itemBinding.mBookSourceAuth.setTextColor(getColor(if (verify) R.color.colorAccent else R.color.colorGrapefruit))
+                itemBinding.mBookSourceAuth.backgroundTintList = ColorStateList.valueOf(getColor(if (verify) R.color.colorAccent else R.color.colorGrapefruit))
             })
         }
-        item.view.mBookSourceInstall.paint.isFakeBoldText = true
-        item.view.mBookSourceInstall.typeface = Typeface.DEFAULT_BOLD
-        item.view.mBookSourceInstall.setText(R.string.more)
-        item.view.mBookSourceInstallLayout.setOnClickListener { showPopupMenu(item.adapterPosition, bookSource) }
+        itemBinding.mBookSourceInstall.paint.isFakeBoldText = true
+        itemBinding.mBookSourceInstall.typeface = Typeface.DEFAULT_BOLD
+        itemBinding.mBookSourceInstall.setText(R.string.more)
+        itemBinding.mBookSourceInstallLayout.setOnClickListener { showPopupMenu(item.adapterPosition, bookSource) }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

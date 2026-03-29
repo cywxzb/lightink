@@ -9,34 +9,42 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.BookSummaryController
+import cn.lightink.reader.databinding.FragmentBookSummaryCacheBinding
+import cn.lightink.reader.databinding.ItemChapterCheckableBinding
 import cn.lightink.reader.model.CacheChapter
 import cn.lightink.reader.model.StateChapter
 import cn.lightink.reader.module.BookCacheModule
 import cn.lightink.reader.module.ListAdapter
 import cn.lightink.reader.ui.base.LifecycleFragment
-import kotlinx.android.synthetic.main.fragment_book_summary_cache.*
-import kotlinx.android.synthetic.main.item_chapter_checkable.view.*
 
 class BookSummaryCacheFragment : LifecycleFragment() {
 
+    private var _binding: FragmentBookSummaryCacheBinding? = null
+    private val binding get() = _binding!!
     private val controller by lazy { ViewModelProvider(activity!!)[BookSummaryController::class.java] }
     private val adapter by lazy { buildAdapter() }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_book_summary_cache, container, false)
+        _binding = FragmentBookSummaryCacheBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         if (controller.book == null) return
-        mBookSummaryRecycler.adapter = adapter
-        mBookSummaryMenuLayout.isVisible = controller.book?.hasBookSource() == true
-        mBookSummaryClear.setOnClickListener { clear() }
+        binding.mBookSummaryRecycler.adapter = adapter
+        binding.mBookSummaryMenuLayout.isVisible = controller.book?.hasBookSource() == true
+        binding.mBookSummaryClear.setOnClickListener { clear() }
         BookCacheModule.attachCacheStatusLive().observe(viewLifecycleOwner, Observer { onCacheStatusChanged() })
         BookCacheModule.attachCacheLive().observe(viewLifecycleOwner, Observer { onChapterCached(it) })
         controller.loadChapters().observe(viewLifecycleOwner, Observer {
             adapter.submitList(it) {
-                mBookSummaryRecycler.requestFocus()
-                mBookSummaryRecycler.scrollToPosition(controller.book?.chapter ?: 0)
+                binding.mBookSummaryRecycler.requestFocus()
+                binding.mBookSummaryRecycler.scrollToPosition(controller.book?.chapter ?: 0)
             }
         })
         onCacheStatusChanged()
@@ -48,13 +56,13 @@ class BookSummaryCacheFragment : LifecycleFragment() {
     private fun onCacheStatusChanged() {
         val caching = BookCacheModule.isCaching(controller.book)
         if (caching) {
-            mBookSummaryDownload.text = getString(R.string.pause)
-            mBookSummaryDownload.setTextColor(mBookSummaryDownload.context.getColor(R.color.colorRed))
-            mBookSummaryDownload.setOnClickListener { BookCacheModule.pause(activity!!, controller.book) }
+            binding.mBookSummaryDownload.text = getString(R.string.pause)
+            binding.mBookSummaryDownload.setTextColor(binding.mBookSummaryDownload.context.getColor(R.color.colorRed))
+            binding.mBookSummaryDownload.setOnClickListener { BookCacheModule.pause(activity!!, controller.book) }
         } else {
-            mBookSummaryDownload.text = getString(R.string.download)
-            mBookSummaryDownload.setTextColor(mBookSummaryDownload.context.getColor(R.color.colorAccent))
-            mBookSummaryDownload.setOnClickListener { cache() }
+            binding.mBookSummaryDownload.text = getString(R.string.download)
+            binding.mBookSummaryDownload.setTextColor(binding.mBookSummaryDownload.context.getColor(R.color.colorAccent))
+            binding.mBookSummaryDownload.setOnClickListener { cache() }
         }
     }
 
@@ -91,13 +99,14 @@ class BookSummaryCacheFragment : LifecycleFragment() {
      * 构建数据适配器
      */
     private fun buildAdapter() = ListAdapter<StateChapter>(R.layout.item_chapter_checkable) { item, chapter ->
-        item.view.setOnClickListener { item.view.mCheckableChapter.toggle() }
-        item.view.mCheckableChapter.setOnCheckedChangeListener(null)
-        item.view.mCheckableChapter.isChecked = chapter.isChecked
-        item.view.mCheckableChapter.isEnabled = chapter.isCached.not()
-        item.view.mCheckableChapter.setButtonDrawable(R.drawable.ic_check_download)
-        item.view.mCheckableChapter.setOnCheckedChangeListener { _, isChecked -> chapter.isChecked = isChecked }
-        item.view.mCheckableChapter.text = chapter.title
-        item.view.mCheckableChapter.setTextColor(item.view.context.getColor(if (chapter.index < controller.book?.chapter ?: 0) R.color.colorContent else R.color.colorTitle))
+        val itemBinding = ItemChapterCheckableBinding.bind(item.view)
+        item.view.setOnClickListener { itemBinding.mCheckableChapter.toggle() }
+        itemBinding.mCheckableChapter.setOnCheckedChangeListener(null)
+        itemBinding.mCheckableChapter.isChecked = chapter.isChecked
+        itemBinding.mCheckableChapter.isEnabled = chapter.isCached.not()
+        itemBinding.mCheckableChapter.setButtonDrawable(R.drawable.ic_check_download)
+        itemBinding.mCheckableChapter.setOnCheckedChangeListener { _, isChecked -> chapter.isChecked = isChecked }
+        itemBinding.mCheckableChapter.text = chapter.title
+        itemBinding.mCheckableChapter.setTextColor(item.view.context.getColor(if (chapter.index < controller.book?.chapter ?: 0) R.color.colorContent else R.color.colorTitle))
     }
 }

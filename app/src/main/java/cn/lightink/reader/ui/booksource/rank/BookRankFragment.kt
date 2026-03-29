@@ -11,6 +11,9 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.BookRankController
+import cn.lightink.reader.databinding.FragmentBookRankBinding
+import cn.lightink.reader.databinding.ItemBookRankGroupBinding
+import cn.lightink.reader.databinding.ItemSimpleBookBinding
 import cn.lightink.reader.model.BookRank
 import cn.lightink.reader.module.*
 import cn.lightink.reader.module.booksource.BookSourceJson
@@ -20,12 +23,11 @@ import cn.lightink.reader.ui.base.BottomSelectorDialog
 import cn.lightink.reader.ui.base.LifecycleFragment
 import cn.lightink.reader.ui.book.BookDetailActivity
 import cn.lightink.reader.widget.VerticalDividerItemDecoration
-import kotlinx.android.synthetic.main.fragment_book_rank.view.*
-import kotlinx.android.synthetic.main.item_book_rank_group.view.*
-import kotlinx.android.synthetic.main.item_simple_book.view.*
 
 class BookRankFragment : LifecycleFragment() {
 
+    private var _binding: FragmentBookRankBinding? = null
+    private val binding get() = _binding!!
     private val controller by lazy { ViewModelProvider(this)[BookRankController::class.java] }
     private val bookRank by lazy { arguments?.getParcelable<BookRank>(INTENT_BOOK_RANK)!! }
     private val bookSource by lazy { Room.bookSource().get(bookRank.url)!! }
@@ -36,25 +38,31 @@ class BookRankFragment : LifecycleFragment() {
     private var page = -1
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_book_rank, container, false)
+        _binding = FragmentBookRankBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         group = bookSourceJson.rank.getOrElse(bookRank.preferred) { bookSourceJson.rank.firstOrNull().apply { bookRank.preferred = 0 } }
         page = group?.page ?: -1
-        view.mBookRankGroupRecycler.addItemDecoration(VerticalDividerItemDecoration(view.context, R.dimen.padding_horizontal_half))
-        view.mBookRankGroupRecycler.isVisible = bookSourceJson.rank.isNotEmpty()
-        view.mBookRankGroupRecycler.adapter = groupAdapter.apply { submitList(bookSourceJson.rank) }
-        view.mBookRankCategory.isVisible = group?.categories?.isNotEmpty() == true
-        view.mBookRankCategory.setOnClickListener { showCategoryDialog() }
+        binding.mBookRankGroupRecycler.addItemDecoration(VerticalDividerItemDecoration(view.context, R.dimen.padding_horizontal_half))
+        binding.mBookRankGroupRecycler.isVisible = bookSourceJson.rank.isNotEmpty()
+        binding.mBookRankGroupRecycler.adapter = groupAdapter.apply { submitList(bookSourceJson.rank) }
+        binding.mBookRankCategory.isVisible = group?.categories?.isNotEmpty() == true
+        binding.mBookRankCategory.setOnClickListener { showCategoryDialog() }
         if (group?.categories?.isNotEmpty() == true) {
             category = group!!.categories.firstOrNull { it.key == bookRank.category } ?: group!!.categories.firstOrNull()
-            view.mBookRankCategory.text = category?.value
+            binding.mBookRankCategory.text = category?.value
         }
-        view.mBookRankRecycler.layoutManager = RVLinearLayoutManager(activity)
-        view.mBookRankRecycler.adapter = adapter
-        view.mBookRankRecycler.setOnLoadMoreListener { onLoadMore() }
+        binding.mBookRankRecycler.layoutManager = RVLinearLayoutManager(activity)
+        binding.mBookRankRecycler.adapter = adapter
+        binding.mBookRankRecycler.setOnLoadMoreListener { onLoadMore() }
     }
 
     private fun showCategoryDialog() {
@@ -69,8 +77,8 @@ class BookRankFragment : LifecycleFragment() {
 
     private fun onRefresh() {
         Room.bookRank().update(bookRank)
-        view?.mBookRankCategory?.isVisible = category != null
-        view?.mBookRankCategory?.text = category?.value
+        binding.mBookRankCategory.isVisible = category != null
+        binding.mBookRankCategory.text = category?.value
         page = group?.page ?: -1
         controller.refresh()
         adapter.submitList(emptyList())
@@ -79,11 +87,10 @@ class BookRankFragment : LifecycleFragment() {
     }
 
     private fun onLoadMore() {
-        if (view?.mBookRankLoading == null) return
-        view?.mBookRankLoading?.isVisible = true
+        binding.mBookRankLoading.isVisible = true
         controller.loadMore(bookSourceParser, group!!, page, category?.key).observe(viewLifecycleOwner, Observer { list ->
-            view?.mBookRankRecycler?.finishLoadMore(page < 0 || list.isNullOrEmpty())
-            view?.mBookRankLoading?.isVisible = false
+            binding.mBookRankRecycler.finishLoadMore(page < 0 || list.isNullOrEmpty())
+            binding.mBookRankLoading.isVisible = false
             if (list.isNotEmpty()) {
                 page += (group?.unit ?: 0)
                 adapter.submitList(list)
@@ -93,17 +100,19 @@ class BookRankFragment : LifecycleFragment() {
     }
 
     private val adapter = ListAdapter<SearchMetadata>(R.layout.item_simple_book) { item, book ->
-        item.view.mSimpleBookCover.hint(book.name).load(book.cover)
-        item.view.mSimpleBookNo.text = (item.adapterPosition + 1).toString()
-        item.view.mSimpleBookName.text = book.name
-        item.view.mSimpleBookAuthor.text = book.author
-        item.view.setOnClickListener { openBookDetail(item.view.mSimpleBookCover, book) }
+        val itemBinding = ItemSimpleBookBinding.bind(item.view)
+        itemBinding.mSimpleBookCover.hint(book.name).load(book.cover)
+        itemBinding.mSimpleBookNo.text = (item.adapterPosition + 1).toString()
+        itemBinding.mSimpleBookName.text = book.name
+        itemBinding.mSimpleBookAuthor.text = book.author
+        item.view.setOnClickListener { openBookDetail(itemBinding.mSimpleBookCover, book) }
     }
 
     private val groupAdapter = ListAdapter<BookSourceJson.Rank>(R.layout.item_book_rank_group) { item, rank ->
-        item.view.mBookRankTitle.text = rank.title
-        item.view.mBookRankTitle.paint.isFakeBoldText = item.adapterPosition == bookRank.preferred
-        item.view.mBookRankTitle.setTextColor(item.view.context.getColor(if (item.adapterPosition == bookRank.preferred) R.color.colorAccent else R.color.colorContent))
+        val itemBinding = ItemBookRankGroupBinding.bind(item.view)
+        itemBinding.mBookRankTitle.text = rank.title
+        itemBinding.mBookRankTitle.paint.isFakeBoldText = item.adapterPosition == bookRank.preferred
+        itemBinding.mBookRankTitle.setTextColor(item.view.context.getColor(if (item.adapterPosition == bookRank.preferred) R.color.colorAccent else R.color.colorContent))
         item.view.setOnClickListener {
             Room.bookRank().update(bookRank.apply { preferred = item.adapterPosition })
             group = rank

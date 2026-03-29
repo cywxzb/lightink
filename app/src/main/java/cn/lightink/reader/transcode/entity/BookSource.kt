@@ -1,7 +1,7 @@
 package cn.lightink.reader.transcode.entity
 
 import android.os.Parcelable
-import kotlinx.android.parcel.Parcelize
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
 /**

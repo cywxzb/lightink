@@ -13,8 +13,9 @@ import android.webkit.*
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import cn.lightink.reader.GlideApp
 import cn.lightink.reader.R
+import coil.imageLoader
+import coil.request.ImageRequest
 import cn.lightink.reader.controller.FeedController
 import cn.lightink.reader.databinding.FragmentFlowBinding
 import cn.lightink.reader.ktx.autoUrl
@@ -118,7 +119,17 @@ class FlowFragment : LifecycleFragment() {
                 //拦截网络图片
                 return try {
                     val url = if (URLUtil.isFileUrl(request.url.toString())) request.url.toString().removePrefix("file://").autoUrl(arguments?.getString(INTENT_FEED_FLOW).orEmpty()) else request.url.toString()
-                    WebResourceResponse("image/*", "UTF-8", GlideApp.with(requireActivity()).downloadOnly().load(url).submit().get().inputStream())
+                    
+                    // 直接使用OkHttp加载图片，避免Coil的协程问题
+                    val client = okhttp3.OkHttpClient.Builder().build()
+                    val okRequest = okhttp3.Request.Builder().url(url).build()
+                    val response = client.newCall(okRequest).execute()
+                    
+                    if (response.isSuccessful && response.body != null) {
+                        WebResourceResponse("image/*", "UTF-8", response.body!!.byteStream())
+                    } else {
+                        super.shouldInterceptRequest(view, request)
+                    }
                 } catch (e: Exception) {
                     super.shouldInterceptRequest(view, request)
                 }

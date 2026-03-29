@@ -10,20 +10,15 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.webkit.URLUtil
 import androidx.appcompat.widget.AppCompatImageView
-import cn.lightink.reader.GlideApp
 import cn.lightink.reader.R
 import cn.lightink.reader.ktx.dominant
 import cn.lightink.reader.ktx.px
 import cn.lightink.reader.module.EMPTY
 import cn.lightink.reader.module.UIModule
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.load.resource.bitmap.CenterCrop
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.Target
+import coil.load
+import coil.request.CachePolicy
+import coil.transform.CircleCropTransformation
+import coil.transform.RoundedCornersTransformation
 import kotlin.math.ceil
 import kotlin.math.min
 
@@ -119,25 +114,28 @@ class ImageUriView @JvmOverloads constructor(context: Context, attrs: AttributeS
         isEnabled = true
         try {
             val isLocalUri = !URLUtil.isNetworkUrl(uri.toString())
-            val glide =  GlideApp.with(context.applicationContext).load(uri)
-            // 本地封面图片也使用内存缓存，提高加载速度
-            glide.skipMemoryCache(false)
-                    .diskCacheStrategy(if (isLocalUri) DiskCacheStrategy.RESOURCE else DiskCacheStrategy.AUTOMATIC)
-                    .apply(RequestOptions().transform(CenterCrop(), RoundWithBorderTransform(context.applicationContext, radius)))
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .listener(object : RequestListener<Drawable> {
-                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>, isFirstResource: Boolean): Boolean {
-                            failure?.invoke()
-                            isEnabled = false
-                            return hint.isBlank()
-                        }
-
-                        override fun onResourceReady(resource: Drawable, model: Any, target: Target<Drawable>, dataSource: DataSource, isFirstResource: Boolean): Boolean {
-                            resource?.run { onResourceReady(this, onResourceReady) }
-                            return false
-                        }
-                    })
-                    .into(this)
+            val radiusPx = px(radius)
+            
+            // 使用Coil 2.5.0的正确API
+            val imageLoader = coil.ImageLoader.Builder(context)
+                .build()
+            
+            val request = coil.request.ImageRequest.Builder(context)
+                .data(uri)
+                .target(
+                    onStart = {},
+                    onSuccess = {
+                        setImageDrawable(it)
+                        onResourceReady(it, onResourceReady)
+                    },
+                    onError = {
+                        failure?.invoke()
+                        isEnabled = false
+                    }
+                )
+                .build()
+            
+            imageLoader.enqueue(request)
         } catch (e: Exception) {
             //捕获生命周期导致的问题
         }

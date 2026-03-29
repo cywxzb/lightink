@@ -13,8 +13,8 @@ import cn.lightink.reader.module.booksource.BookSourceJson
 import cn.lightink.reader.module.booksource.BookSourceParser
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
-import kotlinx.android.parcel.IgnoredOnParcel
-import kotlinx.android.parcel.Parcelize
+import kotlinx.parcelize.IgnoredOnParcel
+import kotlinx.parcelize.Parcelize
 import java.io.File
 
 /********************************************************************************************************************************

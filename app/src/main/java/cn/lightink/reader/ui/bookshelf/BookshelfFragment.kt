@@ -17,6 +17,10 @@ import androidx.recyclerview.widget.DiffUtil
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.FeedController
 import cn.lightink.reader.controller.MainController
+import cn.lightink.reader.databinding.FragmentBookshelfBinding
+import cn.lightink.reader.databinding.ItemBannerBinding
+import cn.lightink.reader.databinding.ItemBookshelfGridBinding
+import cn.lightink.reader.databinding.ItemBookshelfLinearBinding
 import cn.lightink.reader.ktx.alpha
 import cn.lightink.reader.ktx.dominant
 import cn.lightink.reader.ktx.px
@@ -35,10 +39,6 @@ import cn.lightink.reader.ui.feed.FlowActivity
 import cn.lightink.reader.ui.main.MainActivity
 import cn.lightink.reader.ui.main.SearchActivity
 import cn.lightink.reader.ui.reader.ReaderActivity
-import kotlinx.android.synthetic.main.fragment_bookshelf.view.*
-import kotlinx.android.synthetic.main.item_banner.view.*
-import kotlinx.android.synthetic.main.item_bookshelf_grid.view.*
-import kotlinx.android.synthetic.main.item_bookshelf_linear.view.*
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import kotlin.math.max
@@ -46,6 +46,8 @@ import kotlin.math.min
 
 class BookshelfFragment : LifecycleFragment() {
 
+    private var _binding: FragmentBookshelfBinding? = null
+    private val binding get() = _binding!!
     private val controller by lazy { ViewModelProvider(activity!!).get(MainController::class.java) }
     private val feedController by lazy { ViewModelProvider(this).get(FeedController::class.java) }
 
@@ -64,52 +66,58 @@ class BookshelfFragment : LifecycleFragment() {
     private var mLiveData: LiveData<List<Book>>? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_bookshelf, container, false)
+        _binding = FragmentBookshelfBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.mBookshelfName.setPadding(edge * 2, 0, edge * 2, 0)
-        view.mBookshelfName.setOnClickListener { (activity as? MainActivity)?.openDashboardPage() }
-        view.mBookshelfSearch.setOnClickListener { startActivity(SearchActivity::class) }
-        view.mBookshelfAccount.updateLayoutParams<RelativeLayout.LayoutParams> { marginEnd = edge * 2 - view.px(6) }
-        view.mBookshelfAccount.setOnClickListener { (activity as? MainActivity)?.openDiscoverPage() }
-        view.mBookshelfBanner.updateLayoutParams<LinearLayout.LayoutParams> {
+        binding.mBookshelfName.setPadding(edge * 2, 0, edge * 2, 0)
+        binding.mBookshelfName.setOnClickListener { (activity as? MainActivity)?.openDashboardPage() }
+        binding.mBookshelfSearch.setOnClickListener { startActivity(SearchActivity::class) }
+        binding.mBookshelfAccount.updateLayoutParams<RelativeLayout.LayoutParams> { marginEnd = edge * 2 - view.px(6) }
+        binding.mBookshelfAccount.setOnClickListener { (activity as? MainActivity)?.openDiscoverPage() }
+        binding.mBookshelfBanner.updateLayoutParams<LinearLayout.LayoutParams> {
             height = edge * 9
             marginStart = edge * 2
             marginEnd = edge * 2
         }
-        view.mBookshelfFlexibleLayout.setOnRefreshListener { controller.checkBooksUpdate() }
-        view.container.updateLayoutParams<RelativeLayout.LayoutParams> {
+        binding.mBookshelfFlexibleLayout.setOnRefreshListener { controller.checkBooksUpdate() }
+        binding.container.updateLayoutParams<RelativeLayout.LayoutParams> {
             marginStart = max(edge * 2 - view.px(22), 0)
             marginEnd = max(edge * 2 - view.px(22), 0)
         }
         //书架切换
         controller.bookshelfLive.observe(viewLifecycleOwner, Observer { setupBookshelf(it) })
         //书架检查更新
-        controller.bookshelfCheckUpdateLiveData.observe(viewLifecycleOwner, Observer { view.mBookshelfFlexibleLayout.finishRefresh() })
+        controller.bookshelfCheckUpdateLiveData.observe(viewLifecycleOwner, Observer { binding.mBookshelfFlexibleLayout.finishRefresh() })
     }
 
     /**
      * 设置书架
      */
     private fun setupBookshelf(bookshelf: Bookshelf) {
-        view?.mBookshelfName?.text = bookshelf.name
+        binding.mBookshelfName.text = bookshelf.name
         Preferences.put(Preferences.Key.BOOKSHELF, bookshelf.id)
         padding = if (bookshelf.layout == 0) edge else 0
         adapter = if (bookshelf.layout == 0) buildGridAdapter(books) else buildLinearAdapter(books)
-        view?.mBookshelfRecycler?.layoutManager = if (bookshelf.layout == 0) RVGridLayoutManager(activity, span) else RVLinearLayoutManager(activity)
-        view?.mBookshelfRecycler?.adapter = adapter
-        view?.mBookshelfRecycler?.itemAnimator?.changeDuration = 0
-        view?.mBookshelfRecycler?.setPadding(padding, if (bookshelf.layout == 0) resources.getDimensionPixelSize(R.dimen.padding_vertical) else 0, padding, 0)
+        binding.mBookshelfRecycler.layoutManager = if (bookshelf.layout == 0) RVGridLayoutManager(activity, span) else RVLinearLayoutManager(activity)
+        binding.mBookshelfRecycler.adapter = adapter
+        binding.mBookshelfRecycler.itemAnimator?.changeDuration = 0
+        binding.mBookshelfRecycler.setPadding(padding, if (bookshelf.layout == 0) resources.getDimensionPixelSize(R.dimen.padding_vertical) else 0, padding, 0)
         mLiveData?.removeObservers(viewLifecycleOwner)
         mLiveData = controller.queryBooksByBookshelf(bookshelf)
         mLiveData?.observe(viewLifecycleOwner, Observer { list ->
             calculateDiff(list)
-            checkHelpView(list.isNullOrEmpty() && view?.mBookshelfBanner?.isVisible == false)
+            checkHelpView(list.isNullOrEmpty() && binding.mBookshelfBanner.isVisible == false)
         })
         //查询书架绑定的RSS分组
         Room.feedGroup().getByBookshelf(bookshelf.id).observe(viewLifecycleOwner, Observer { feed ->
-            view?.mBookshelfBanner?.isVisible = feed != null
+            binding.mBookshelfBanner.isVisible = feed != null
             feed?.run { setupFeed(this) }
         })
     }
@@ -122,19 +130,20 @@ class BookshelfFragment : LifecycleFragment() {
         Room.feed().getByGroupId(group.id).observe(viewLifecycleOwner, Observer { feeds ->
             Room.flow().getForBookshelf(feeds.map { it.id }).observe(viewLifecycleOwner, Observer { results ->
                 val flows = if (results.isNullOrEmpty()) listOf(Flow(EMPTY, "${group.name} | 暂无内容", EMPTY, EMPTY, null, 0, 0, EMPTY)) else results
-                view?.mBookshelfBanner?.setData(R.layout.item_banner, flows, arrayListOf())
-                view?.mBookshelfBanner?.setAdapter { _, itemView, flow, _ ->
-                    itemView.mBannerTitle.text = (flow as Flow).title
-                    itemView.mBannerCover.radius(1F).load(if (flow.cover.isNullOrBlank()) R.drawable.rss_none else flow.cover) { drawable ->
+                binding.mBookshelfBanner.setData(R.layout.item_banner, flows, arrayListOf())
+                binding.mBookshelfBanner.setAdapter { _, itemView, flow, _ ->
+                    val itemBinding = ItemBannerBinding.bind(itemView)
+                    itemBinding.mBannerTitle.text = (flow as Flow).title
+                    itemBinding.mBannerCover.radius(1F).load(if (flow.cover.isNullOrBlank()) R.drawable.rss_none else flow.cover) { drawable ->
                         drawable.dominant { dominant ->
                             //防止取色返回结果时因页面关闭引起的IllegalStateException
                             if (context == null) return@dominant
-                            itemView.mBannerOverlay.background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(dominant.rgb, dominant.rgb.alpha(200), dominant.rgb.alpha(60))).apply { cornerRadius = resources.getDimension(R.dimen.dimen1) }
-                            itemView.mBannerTitle.setTextColor(dominant.bodyTextColor)
+                            itemBinding.mBannerOverlay.background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(dominant.rgb, dominant.rgb.alpha(200), dominant.rgb.alpha(60))).apply { cornerRadius = resources.getDimension(R.dimen.dimen1) }
+                            itemBinding.mBannerTitle.setTextColor(dominant.bodyTextColor)
                         }
                     }
                 }
-                view?.mBookshelfBanner?.setDelegate { _, _, flow, _ ->
+                binding.mBookshelfBanner.setDelegate { _, _, flow, _ ->
                     startActivity(Intent(activity, FlowActivity::class.java).putExtra(INTENT_FEED_GROUP, group.id).putExtra(INTENT_FEED_FLOW, (flow as Flow).link))
                 }
             })
@@ -155,7 +164,7 @@ class BookshelfFragment : LifecycleFragment() {
      * 检查是否显示使用指南
      */
     private fun checkHelpView(isVisible: Boolean) {
-        view?.container?.isVisible = isVisible
+        binding.container.isVisible = isVisible
         val transaction = childFragmentManager.beginTransaction()
         if (isVisible && childFragmentManager.fragments.isEmpty()) {
             transaction.replace(R.id.container, BookshelfHelpFragment()).commitAllowingStateLoss()
@@ -178,34 +187,36 @@ class BookshelfFragment : LifecycleFragment() {
      * 构建网格数据适配器
      */
     private fun buildGridAdapter(list: MutableList<Book>) = BaseAdapter(list, R.layout.item_bookshelf_grid) { item, book ->
+        val itemBinding = ItemBookshelfGridBinding.bind(item.view)
         item.view.setPadding(edge, 0, edge, edge * 2)
-        item.view.mBookGridCoverLayout.layoutParams.width = size
-        item.view.mBookGridCoverLayout.layoutParams.height = (size * 1.4F).toInt()
-        item.view.mBookGridName.text = book.name
-        item.view.mBookGridName.isVisible = controller.bookshelfLive.value?.info == 1
-        item.view.mBookGridState.setImageResource(book.stateResId)
-        item.view.mBookGridState.isVisible = book.stateResId != 0
-        item.view.mBookGridCover.privacy().force().stroke().hint(book.name).load(book.cover)
+        itemBinding.mBookGridCoverLayout.layoutParams.width = size
+        itemBinding.mBookGridCoverLayout.layoutParams.height = (size * 1.4F).toInt()
+        itemBinding.mBookGridName.text = book.name
+        itemBinding.mBookGridName.isVisible = controller.bookshelfLive.value?.info == 1
+        itemBinding.mBookGridState.setImageResource(book.stateResId)
+        itemBinding.mBookGridState.isVisible = book.stateResId != 0
+        itemBinding.mBookGridCover.privacy().force().stroke().hint(book.name).load(book.cover)
         item.view.setOnLongClickListener { onBookLongClicked(book) }
-        item.view.setOnClickListener { openBook(item.view.mBookGridCover, book) }
+        item.view.setOnClickListener { openBook(itemBinding.mBookGridCover, book) }
     }
 
     /**
      * 构建线性数据适配器
      */
     private fun buildLinearAdapter(list: MutableList<Book>) = BaseAdapter(list, R.layout.item_bookshelf_linear) { item, book ->
+        val itemBinding = ItemBookshelfLinearBinding.bind(item.view)
         item.view.setPadding(edge * 2, edge, edge * 2, edge)
-        item.view.mBookLinearName.text = book.name
-        item.view.mBookLinearState.text = book.status
-        item.view.mBookLinearState.isVisible = book.status.isNotBlank()
-        item.view.mBookLinearState.setBackgroundResource(book.statusResId)
-        item.view.mBookLinearAuthor.text = book.author
-        item.view.mBookLinearStatus.text = when (book.state) {
+        itemBinding.mBookLinearName.text = book.name
+        itemBinding.mBookLinearState.text = book.status
+        itemBinding.mBookLinearState.isVisible = book.status.isNotBlank()
+        itemBinding.mBookLinearState.setBackgroundResource(book.statusResId)
+        itemBinding.mBookLinearAuthor.text = book.author
+        itemBinding.mBookLinearStatus.text = when (book.state) {
             BOOK_STATE_END -> getString(R.string.book_end, book.lastChapter)
             else -> getString(R.string.book_not_end, book.lastChapter)
         }
-        item.view.mBookLinearCover.privacy().stroke().hint(book.name).load(book.cover)
-        item.view.mBookLinearProgress.text = run {
+        itemBinding.mBookLinearCover.privacy().stroke().hint(book.name).load(book.cover)
+        itemBinding.mBookLinearProgress.text = run {
             val progress = if (book.chapter == 0) getString(R.string.bookshelf_progress_none) else getString(R.string.bookshelf_progress, min((book.chapter + 1) / max(1, book.catalog).toFloat() * 100, 100F))
             when {
                 controller.bookshelfLive.value?.info != 1 -> progress
@@ -214,7 +225,7 @@ class BookshelfFragment : LifecycleFragment() {
             }
         }
         item.view.setOnLongClickListener { onBookLongClicked(book) }
-        item.view.setOnClickListener { openBook(item.view.mBookLinearCover, book) }
+        item.view.setOnClickListener { openBook(itemBinding.mBookLinearCover, book) }
     }
 
     /**

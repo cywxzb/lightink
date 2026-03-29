@@ -3,7 +3,7 @@ package cn.lightink.reader.model
 import android.os.Parcelable
 import androidx.room.*
 import cn.lightink.reader.module.EMPTY
-import kotlinx.android.parcel.Parcelize
+import kotlinx.parcelize.Parcelize
 
 /********************************************************************************************************************************
  * 存储类 排行榜

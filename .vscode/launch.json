@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    
+
+
+    {
+      "name": "调试 Android 应用",
+      "type": "android",
+      "request": "launch",
+      "appPackage": "cn.lightink.reader",
+      "appActivity": "cn.lightink.reader.ui.main.MainActivity",
+      "deviceId": "auto",
+      "useAndroidExtras": true
+    },
+    {
+      "name": "附加到 Android 进程",
+      "type": "android",
+      "request": "attach",
+      "processId": "${command:PickAndroidProcess}"
+    },
+    {
+      "name": "使用 USB 调试",
+      "type": "android",
+      "request": "launch",
+      "appPackage": "cn.lightink.reader",
+      "appActivity": "cn.lightink.reader.ui.main.MainActivity",
+      "deviceId": "usb",
+      "useAndroidExtras": true
+    },
+    {
+      "name": "使用模拟器调试",
+      "type": "android",
+      "request": "launch",
+      "appPackage": "cn.lightink.reader",
+      "appActivity": "cn.lightink.reader.ui.main.MainActivity",
+      "deviceId": "emulator",
+      "useAndroidExtras": true
+    }
+  ]
+}
