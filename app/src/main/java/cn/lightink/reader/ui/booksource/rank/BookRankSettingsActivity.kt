@@ -9,12 +9,12 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import cn.lightink.reader.R
 import cn.lightink.reader.controller.BookRankController
+import cn.lightink.reader.databinding.ActivityBookRankSettingsBinding
+import cn.lightink.reader.databinding.ItemBookRankListBinding
 import cn.lightink.reader.model.BookRank
 import cn.lightink.reader.module.ListAdapter
 import cn.lightink.reader.module.RVLinearLayoutManager
 import cn.lightink.reader.ui.base.LifecycleActivity
-import kotlinx.android.synthetic.main.activity_book_rank_settings.*
-import kotlinx.android.synthetic.main.item_book_rank_list.view.*
 import java.util.*
 
 class BookRankSettingsActivity : LifecycleActivity() {
@@ -23,25 +23,28 @@ class BookRankSettingsActivity : LifecycleActivity() {
     private val mItemTouchHelper by lazy { ItemTouchHelper(itemTouchHelperCallback) }
     private val ranks = mutableListOf<BookRank>()
     private var isUpdated = false
+    private lateinit var binding: ActivityBookRankSettingsBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_book_rank_settings)
+        binding = ActivityBookRankSettingsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         ranks.addAll(controller.getBookRanks())
-        mBookRankSettingsRecycler.layoutManager = RVLinearLayoutManager(this)
-        mBookRankSettingsRecycler.adapter = adapter.apply { submitList(ranks) }
-        mItemTouchHelper.attachToRecyclerView(mBookRankSettingsRecycler)
+        binding.mBookRankSettingsRecycler.layoutManager = RVLinearLayoutManager(this)
+        binding.mBookRankSettingsRecycler.adapter = adapter.apply { submitList(ranks) }
+        mItemTouchHelper.attachToRecyclerView(binding.mBookRankSettingsRecycler)
     }
 
     //构建数据适配器
     private val adapter = ListAdapter<BookRank>(R.layout.item_book_rank_list) { item, bookRank ->
-        item.view.mBookRankTitle.text = bookRank.name
-        item.view.mBookRankVisible.isChecked = bookRank.visible
-        item.view.mBookRankVisible.setOnCheckedChangeListener { _, isChecked ->
+        val itemBinding = ItemBookRankListBinding.bind(item.view)
+        itemBinding.mBookRankTitle.text = bookRank.name
+        itemBinding.mBookRankVisible.isChecked = bookRank.visible
+        itemBinding.mBookRankVisible.setOnCheckedChangeListener { _, isChecked ->
             bookRank.visible = isChecked
             isUpdated = true
         }
-        item.view.mBookRankTouch.setOnTouchListener { _, event ->
+        itemBinding.mBookRankTouch.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 mItemTouchHelper.startDrag(item)
             }
